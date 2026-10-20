@@ -49,6 +49,40 @@
                 </section>
             </div>
 
+            {{-- Données de santé : visibles par le médecin uniquement (MedicalRecordPolicy). --}}
+            @can('view', $record)
+                <section class="p-6 bg-white shadow-xs sm:rounded-lg">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <h3 class="text-lg font-medium text-gray-900">Dossier médical</h3>
+                        @can('update', $record)
+                            <a href="{{ route('patients.medical-record.edit', $patient) }}" class="text-sm text-indigo-600 hover:text-indigo-800">
+                                Modifier le dossier
+                            </a>
+                        @endcan
+                    </div>
+
+                    <dl class="mt-4 grid gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+                        <dt class="text-gray-500">Groupe sanguin</dt>
+                        <dd class="sm:col-span-3 text-gray-900">{{ $record->blood_type?->label() ?? 'Inconnu' }}</dd>
+
+                        <dt class="text-gray-500">Allergies</dt>
+                        <dd class="sm:col-span-3">
+                            @if ($record->allergies)
+                                <span class="font-medium text-red-700 whitespace-pre-line">{{ $record->allergies }}</span>
+                            @else
+                                <span class="text-gray-500">Aucune allergie connue</span>
+                            @endif
+                        </dd>
+
+                        <dt class="text-gray-500">Antécédents</dt>
+                        <dd class="sm:col-span-3 text-gray-900 whitespace-pre-line">{{ $record->medical_history ?? '—' }}</dd>
+
+                        <dt class="text-gray-500">Traitements en cours</dt>
+                        <dd class="sm:col-span-3 text-gray-900 whitespace-pre-line">{{ $record->current_treatments ?? '—' }}</dd>
+                    </dl>
+                </section>
+            @endcan
+
             <div class="grid gap-6 lg:grid-cols-2">
                 <section class="p-6 bg-white shadow-xs sm:rounded-lg">
                     <h3 class="text-lg font-medium text-gray-900">Rendez-vous à venir</h3>

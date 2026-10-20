@@ -74,6 +74,8 @@ class PatientController extends Controller
         // Rendez-vous en lecture seule (leur gestion viendra avec le module Rendez-vous).
         return view('patients.show', [
             'patient' => $patient,
+            // Affiché seulement si la MedicalRecordPolicy l'autorise (@can dans la vue).
+            'record' => $patient->medicalRecord ?? $patient->medicalRecord()->make(),
             'upcoming' => $patient->appointments()->with('doctor')
                 ->where('starts_at', '>=', now())
                 ->orderBy('starts_at')

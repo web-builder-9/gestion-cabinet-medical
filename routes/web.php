@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffController;
@@ -22,6 +23,14 @@ Route::middleware('auth')->group(function () {
 // la PatientPolicy (ex. : suppression réservée au médecin).
 Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     Route::resource('patients', PatientController::class)->except(['destroy']);
+
+    // Dossier médical : médecin uniquement (en plus de la MedicalRecordPolicy).
+    Route::middleware('role:doctor')->group(function () {
+        Route::get('patients/{patient}/dossier/edit', [MedicalRecordController::class, 'edit'])
+            ->name('patients.medical-record.edit');
+        Route::put('patients/{patient}/dossier', [MedicalRecordController::class, 'update'])
+            ->name('patients.medical-record.update');
+    });
 });
 
 // Gestion du personnel : médecin uniquement (middleware + UserPolicy).
