@@ -71,6 +71,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Personnel du cabinet : médecin ou secrétaire.
+     */
+    public function isStaff(): bool
+    {
+        return $this->hasRole(Role::Doctor, Role::Secretary);
+    }
+
+    /**
      * Fiche patient liée à ce compte (uniquement pour le rôle patient).
      *
      * @return HasOne<Patient, $this>
