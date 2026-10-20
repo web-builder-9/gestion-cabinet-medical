@@ -3,9 +3,9 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Application interne : pas de page vitrine. L'accueil mène au tableau de bord,
+// qui renvoie lui-même vers la connexion si l'utilisateur n'est pas connecté.
+Route::redirect('/', '/dashboard');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
