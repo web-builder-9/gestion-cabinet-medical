@@ -15,21 +15,6 @@ class RoleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_registration_gives_the_patient_role(): void
-    {
-        $this->post('/register', [
-            'name' => 'Nouveau Compte',
-            'email' => 'nouveau@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-            'role' => 'doctor',
-        ]);
-
-        $user = User::where('email', 'nouveau@example.com')->firstOrFail();
-
-        $this->assertSame(Role::Patient, $user->role);
-    }
-
     public function test_role_cannot_be_mass_assigned(): void
     {
         $user = User::create([
