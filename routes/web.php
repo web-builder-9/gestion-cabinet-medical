@@ -21,7 +21,7 @@ Route::middleware('auth')->group(function () {
 // Patients : personnel du cabinet (middleware) ; chaque action vérifie en plus
 // la PatientPolicy (ex. : suppression réservée au médecin).
 Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
-    Route::resource('patients', PatientController::class)->only(['index']);
+    Route::resource('patients', PatientController::class)->only(['index', 'create', 'store', 'edit', 'update']);
 });
 
 // Gestion du personnel : médecin uniquement (middleware + UserPolicy).

@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Gender;
+use App\Http\Requests\PatientRequest;
 use App\Models\Patient;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -33,5 +37,48 @@ class PatientController extends Controller
             'patients' => $patients,
             'search' => $search,
         ]);
+    }
+
+    public function create(): View
+    {
+        Gate::authorize('create', Patient::class);
+
+        return view('patients.create', [
+            'patient' => new Patient,
+            'genders' => Gender::cases(),
+        ]);
+    }
+
+    public function store(PatientRequest $request): RedirectResponse
+    {
+        // La fiche et son dossier médical (vide) sont créés ensemble :
+        // si l'un échoue, rien n'est enregistré (transaction).
+        $patient = DB::transaction(function () use ($request) {
+            $patient = Patient::create($request->validated());
+            $patient->medicalRecord()->create();
+
+            return $patient;
+        });
+
+        return redirect()->route('patients.index')
+            ->with('status', "{$patient->full_name} a été ajouté(e).");
+    }
+
+    public function edit(Patient $patient): View
+    {
+        Gate::authorize('update', $patient);
+
+        return view('patients.edit', [
+            'patient' => $patient,
+            'genders' => Gender::cases(),
+        ]);
+    }
+
+    public function update(PatientRequest $request, Patient $patient): RedirectResponse
+    {
+        $patient->update($request->validated());
+
+        return redirect()->route('patients.index')
+            ->with('status', "La fiche de {$patient->full_name} a été modifiée.");
     }
 }

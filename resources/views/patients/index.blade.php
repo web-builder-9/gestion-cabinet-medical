@@ -2,6 +2,13 @@
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Patients</h2>
+
+            @can('create', App\Models\Patient::class)
+                <a href="{{ route('patients.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-800 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                    Nouveau patient
+                </a>
+            @endcan
         </div>
     </x-slot>
 
@@ -27,6 +34,7 @@
                             <th class="px-6 py-3 font-medium">CIN</th>
                             <th class="px-6 py-3 font-medium">Date de naissance</th>
                             <th class="px-6 py-3 font-medium">Téléphone</th>
+                            <th class="px-6 py-3"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -41,10 +49,15 @@
                                     <span class="text-gray-400">({{ $patient->age }} ans)</span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-600">{{ $patient->phone }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    @can('update', $patient)
+                                        <a href="{{ route('patients.edit', $patient) }}" class="text-indigo-600 hover:text-indigo-800">Modifier</a>
+                                    @endcan
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-4 text-gray-500">
+                                <td colspan="5" class="px-6 py-4 text-gray-500">
                                     @if ($search !== '')
                                         Aucun patient ne correspond à « {{ $search }} ».
                                     @else
