@@ -105,4 +105,14 @@ class User extends Authenticatable
     {
         $query->where('role', Role::Doctor->value);
     }
+
+    /**
+     * Comptes du personnel du cabinet (médecins et secrétaires).
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeStaff(Builder $query): void
+    {
+        $query->whereIn('role', [Role::Doctor->value, Role::Secretary->value]);
+    }
 }

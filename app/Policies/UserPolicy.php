@@ -19,9 +19,13 @@ class UserPolicy
         return $user->isDoctor();
     }
 
+    /**
+     * Le médecin modifie les comptes du personnel. Les comptes patients
+     * seront gérés avec l'espace patient, pas ici.
+     */
     public function update(User $user, User $account): bool
     {
-        return $user->isDoctor();
+        return $user->isDoctor() && $account->isStaff();
     }
 
     /**
@@ -30,7 +34,7 @@ class UserPolicy
      */
     public function updateRole(User $user, User $account): bool
     {
-        return $user->isDoctor() && $user->isNot($account);
+        return $this->update($user, $account) && $user->isNot($account);
     }
 
     /**

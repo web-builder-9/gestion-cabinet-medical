@@ -147,6 +147,12 @@ class PolicyTest extends TestCase
         $this->assertTrue($this->doctor->can('update', $this->doctor));
     }
 
+    public function test_patient_accounts_are_not_managed_as_staff(): void
+    {
+        $this->assertFalse($this->doctor->can('update', $this->patientUser));
+        $this->assertFalse($this->doctor->can('updateRole', $this->patientUser));
+    }
+
     private function assertRights(string $ability, mixed $target, bool $doctor, bool $secretary, bool $patient): void
     {
         $this->assertSame($doctor, $this->doctor->can($ability, $target), "Médecin : {$ability}");
