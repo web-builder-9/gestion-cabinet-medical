@@ -44,18 +44,24 @@ Comptes de démonstration (mot de passe `password`) : `medecin@cabinet.test`, `s
 | Facturation                               | oui     | oui        | non                 |
 | Comptes du personnel                      | oui     | non        | non                 |
 
-- Le rôle est dans `users.role` (enum `App\Enums\Role`), « patient » par défaut : un compte créé via l'inscription
-  publique n'a accès à rien.
+- Le rôle est dans `users.role` (enum `App\Enums\Role`), « patient » par défaut (le moins privilégié).
 - `role` n'est jamais dans `Fillable` : on l'affecte explicitement (`$user->role = Role::Secretary`).
-- Les autorisations passent par des Policies (une par modèle) et un middleware de rôle, jamais par des `if` dans les vues
-  seulement.
+- Pas d'inscription publique ni de suppression de son propre compte : les comptes du personnel sont créés et modifiés
+  par le médecin dans `/personnel` (`StaffController`). Personne ne modifie son propre rôle.
+- Deux niveaux de protection :
+  - middleware `role` sur les groupes de routes : `->middleware(['auth', 'role:doctor,secretary'])` ;
+  - Policies (`app/Policies`, une par modèle, découvertes automatiquement) pour chaque action :
+    `Gate::authorize('update', $patient)` dans les contrôleurs, `authorize()` dans les FormRequest,
+    `@can(...)` dans les vues (menus, boutons). Jamais de `if` sur le rôle dans une vue à la place d'une Policy.
+- La matrice des droits est testée dans `tests/Feature/PolicyTest.php` : la mettre à jour avec ce tableau.
 
 ## Modèle de données
 
 Tables faites : `users` (+ role, phone), `patients`, `medical_records`, `appointments`.
 Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoices`.
 
-- Noms en anglais (classes, tables, colonnes) pour suivre les conventions Laravel ; textes affichés en français.
+- Noms en anglais (classes, tables, colonnes, noms de routes) pour suivre les conventions Laravel ; textes affichés
+  et URL en français (`/personnel`, `/patients`, `/rendez-vous` ; routes `staff.*`, `patients.*`, `appointments.*`).
 - Statuts et listes fixes : enums PHP dans `app/Enums`, stockés en texte (pas d'ENUM MySQL).
 - `medical_records` est séparé de `patients` pour réserver les données médicales au médecin.
 - `patients` utilise la suppression douce (`SoftDeletes`) : on ne perd jamais l'historique.
@@ -68,6 +74,9 @@ Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoi
 - Contrôleurs de ressource minces ; validation dans des `FormRequest` ; autorisation dans des Policies ;
   logique métier réutilisable dans `app/Services`.
 - Eloquent ou Query Builder, pas de SQL brut.
+- Textes : les nouvelles vues sont écrites directement en français. `__()` et `lang/fr.json` servent aux vues de Breeze
+  et aux textes de Laravel ; les messages de validation et les noms de champs sont dans `lang/fr/validation.php`
+  (ajouter chaque nouvelle colonne dans `attributes`).
 - Données de test et de démo : uniquement des factories et seeders fictifs, jamais de vraies données de patients.
 - Lancer `vendor/bin/pint` avant de commiter.
 - Chaque règle métier critique (droits d'accès, conflits, calculs) a un test Feature.
@@ -87,10 +96,14 @@ Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoi
 - Avancer par petites étapes, un commit par étape cohérente, avec une brève explication du quoi et du pourquoi.
 - Lancer `php artisan test` avant chaque commit.
 
-## Prochaines étapes
+## Avancement
 
-1. Interface en français (`lang/fr.json`, messages de validation).
-2. Middleware de rôle, Policies, menu selon le rôle ; décider du sort de l'inscription publique.
-3. Module Patients : liste, recherche, création, modification, dossier médical.
-4. Module Rendez-vous : agenda jour/semaine, statuts, refus des conflits.
-5. Consultations, puis ordonnances (PDF), facturation et tableau de bord.
+Fait : squelette, authentification, interface en français, rôles (middleware, Policies, menu), gestion du personnel,
+modèle de données des patients et rendez-vous.
+
+Prochaines étapes :
+
+1. Module Patients : liste, recherche, création, modification, dossier médical (médecin seulement).
+2. Module Rendez-vous : agenda jour/semaine, statuts, refus des conflits.
+3. Consultations, puis ordonnances (PDF), facturation et tableau de bord.
+4. Espace patient : comptes liés à une fiche par la secrétaire, consultation de ses rendez-vous.

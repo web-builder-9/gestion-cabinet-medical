@@ -1,11 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Application interne : pas de page vitrine. L'accueil mène au tableau de bord,
+// qui renvoie lui-même vers la connexion si l'utilisateur n'est pas connecté.
+Route::redirect('/', '/dashboard');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -14,7 +15,15 @@ Route::get('/dashboard', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Gestion du personnel : médecin uniquement (middleware + UserPolicy).
+// URL en français (/personnel), noms de routes en anglais (staff.*).
+Route::middleware(['auth', 'role:doctor'])->group(function () {
+    Route::resource('personnel', StaffController::class)
+        ->parameters(['personnel' => 'user'])
+        ->names('staff')
+        ->except(['show', 'destroy']);
 });
 
 require __DIR__.'/auth.php';

@@ -51,6 +51,9 @@ Si `composer run dev` ne fonctionne pas sur votre machine, ouvrez deux terminaux
 | Secrétaire | `secretaire@cabinet.test` | `password`   |
 | Patient    | `patient@cabinet.test`    | `password`   |
 
+Il n'y a pas d'inscription publique : connecté en tant que médecin, le menu **Personnel** permet d'ajouter ou de
+modifier les comptes des médecins et secrétaires.
+
 Toutes les données (patients, dossiers, rendez-vous) sont fictives et générées par les seeders.
 `php artisan migrate:fresh --seed` remet la base à zéro à tout moment.
 

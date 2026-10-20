@@ -71,6 +71,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Personnel du cabinet : médecin ou secrétaire.
+     */
+    public function isStaff(): bool
+    {
+        return $this->hasRole(Role::Doctor, Role::Secretary);
+    }
+
+    /**
      * Fiche patient liée à ce compte (uniquement pour le rôle patient).
      *
      * @return HasOne<Patient, $this>
@@ -96,5 +104,15 @@ class User extends Authenticatable
     public function scopeDoctors(Builder $query): void
     {
         $query->where('role', Role::Doctor->value);
+    }
+
+    /**
+     * Comptes du personnel du cabinet (médecins et secrétaires).
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeStaff(Builder $query): void
+    {
+        $query->whereIn('role', [Role::Doctor->value, Role::Secretary->value]);
     }
 }
