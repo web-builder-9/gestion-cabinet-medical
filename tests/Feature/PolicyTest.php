@@ -45,6 +45,7 @@ class PolicyTest extends TestCase
             'créer une fiche' => ['create', true, true, false],
             'modifier une fiche' => ['update', true, true, false],
             'supprimer une fiche' => ['delete', true, false, false],
+            'voir les archives' => ['viewArchived', true, false, false],
             'restaurer une fiche' => ['restore', true, false, false],
             'supprimer pour de bon' => ['forceDelete', false, false, false],
         ];
@@ -54,7 +55,7 @@ class PolicyTest extends TestCase
     public function test_patient_rights(string $ability, bool $doctor, bool $secretary, bool $patient): void
     {
         $record = Patient::factory()->create();
-        $target = in_array($ability, ['viewAny', 'create'], true) ? Patient::class : $record;
+        $target = in_array($ability, ['viewAny', 'create', 'viewArchived'], true) ? Patient::class : $record;
 
         $this->assertRights($ability, $target, $doctor, $secretary, $patient);
     }

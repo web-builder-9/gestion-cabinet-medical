@@ -22,15 +22,22 @@ Route::middleware('auth')->group(function () {
 // Patients : personnel du cabinet (middleware) ; chaque action vérifie en plus
 // la PatientPolicy (ex. : suppression réservée au médecin).
 Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
-    Route::resource('patients', PatientController::class)->except(['destroy']);
-
-    // Dossier médical : médecin uniquement (en plus de la MedicalRecordPolicy).
+    // Réservé au médecin (en plus des Policies). Déclaré AVANT la ressource :
+    // sinon « /patients/archives » serait pris pour la fiche d'un patient.
     Route::middleware('role:doctor')->group(function () {
+        Route::get('patients/archives', [PatientController::class, 'archived'])
+            ->name('patients.archived');
+        Route::patch('patients/{patient}/restore', [PatientController::class, 'restore'])
+            ->withTrashed() // autorise un patient archivé dans l'URL
+            ->name('patients.restore');
+
         Route::get('patients/{patient}/dossier/edit', [MedicalRecordController::class, 'edit'])
             ->name('patients.medical-record.edit');
         Route::put('patients/{patient}/dossier', [MedicalRecordController::class, 'update'])
             ->name('patients.medical-record.update');
     });
+
+    Route::resource('patients', PatientController::class);
 });
 
 // Gestion du personnel : médecin uniquement (middleware + UserPolicy).

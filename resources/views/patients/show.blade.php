@@ -13,6 +13,15 @@
                         Modifier
                     </a>
                 @endcan
+
+                @can('delete', $patient)
+                    <form method="POST" action="{{ route('patients.destroy', $patient) }}"
+                          onsubmit="return confirm(@js("Archiver la fiche de {$patient->full_name} ? Elle pourra être restaurée."))">
+                        @csrf
+                        @method('DELETE')
+                        <x-danger-button>Supprimer</x-danger-button>
+                    </form>
+                @endcan
             </div>
         </div>
     </x-slot>

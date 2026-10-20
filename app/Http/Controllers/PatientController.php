@@ -105,4 +105,37 @@ class PatientController extends Controller
         return redirect()->route('patients.show', $patient)
             ->with('status', "La fiche de {$patient->full_name} a été modifiée.");
     }
+
+    /**
+     * Suppression douce : la fiche disparaît de la liste mais reste en base
+     * (colonne deleted_at), avec son dossier et ses rendez-vous.
+     */
+    public function destroy(Patient $patient): RedirectResponse
+    {
+        Gate::authorize('delete', $patient);
+
+        $patient->delete();
+
+        return redirect()->route('patients.index')
+            ->with('status', "{$patient->full_name} a été archivé(e). Le médecin peut restaurer la fiche depuis les archives.");
+    }
+
+    public function archived(): View
+    {
+        Gate::authorize('viewArchived', Patient::class);
+
+        return view('patients.archived', [
+            'patients' => Patient::onlyTrashed()->orderByDesc('deleted_at')->paginate(self::PER_PAGE),
+        ]);
+    }
+
+    public function restore(Patient $patient): RedirectResponse
+    {
+        Gate::authorize('restore', $patient);
+
+        $patient->restore();
+
+        return redirect()->route('patients.show', $patient)
+            ->with('status', "La fiche de {$patient->full_name} a été restaurée.");
+    }
 }
