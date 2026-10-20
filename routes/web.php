@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,12 @@ Route::get('/dashboard', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+});
+
+// Patients : personnel du cabinet (middleware) ; chaque action vérifie en plus
+// la PatientPolicy (ex. : suppression réservée au médecin).
+Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
+    Route::resource('patients', PatientController::class)->only(['index']);
 });
 
 // Gestion du personnel : médecin uniquement (middleware + UserPolicy).

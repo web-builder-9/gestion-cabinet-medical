@@ -16,6 +16,12 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
+                    @can('viewAny', App\Models\Patient::class)
+                        <x-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
+                            Patients
+                        </x-nav-link>
+                    @endcan
+
                     @can('viewAny', App\Models\User::class)
                         <x-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
                             Personnel
@@ -79,6 +85,12 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            @can('viewAny', App\Models\Patient::class)
+                <x-responsive-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
+                    Patients
+                </x-responsive-nav-link>
+            @endcan
 
             @can('viewAny', App\Models\User::class)
                 <x-responsive-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
