@@ -14,7 +14,7 @@
 
                     <div class="flex items-center gap-4">
                         <x-primary-button>Enregistrer</x-primary-button>
-                        <a href="{{ route('patients.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Annuler</a>
+                        <a href="{{ route('patients.show', $patient) }}" class="text-sm text-gray-600 hover:text-gray-900">Annuler</a>
                     </div>
                 </form>
             </div>

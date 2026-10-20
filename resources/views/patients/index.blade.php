@@ -40,8 +40,10 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($patients as $patient)
                             <tr>
-                                <td class="px-6 py-4 font-medium text-gray-900">
-                                    {{ $patient->last_name }} {{ $patient->first_name }}
+                                <td class="px-6 py-4 font-medium">
+                                    <a href="{{ route('patients.show', $patient) }}" class="text-gray-900 hover:text-indigo-700 hover:underline">
+                                        {{ $patient->last_name }} {{ $patient->first_name }}
+                                    </a>
                                 </td>
                                 <td class="px-6 py-4 text-gray-600">{{ $patient->cin ?? '—' }}</td>
                                 <td class="px-6 py-4 text-gray-600">

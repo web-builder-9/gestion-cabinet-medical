@@ -20,6 +20,9 @@ class PatientController extends Controller
     /** Nombre de patients par page dans la liste. */
     public const PER_PAGE = 15;
 
+    /** Nombre de rendez-vous passés affichés sur la fiche. */
+    public const PAST_APPOINTMENTS = 10;
+
     public function index(Request $request): View
     {
         Gate::authorize('viewAny', Patient::class);
@@ -60,8 +63,27 @@ class PatientController extends Controller
             return $patient;
         });
 
-        return redirect()->route('patients.index')
+        return redirect()->route('patients.show', $patient)
             ->with('status', "{$patient->full_name} a été ajouté(e).");
+    }
+
+    public function show(Patient $patient): View
+    {
+        Gate::authorize('view', $patient);
+
+        // Rendez-vous en lecture seule (leur gestion viendra avec le module Rendez-vous).
+        return view('patients.show', [
+            'patient' => $patient,
+            'upcoming' => $patient->appointments()->with('doctor')
+                ->where('starts_at', '>=', now())
+                ->orderBy('starts_at')
+                ->get(),
+            'past' => $patient->appointments()->with('doctor')
+                ->where('starts_at', '<', now())
+                ->orderByDesc('starts_at')
+                ->limit(self::PAST_APPOINTMENTS)
+                ->get(),
+        ]);
     }
 
     public function edit(Patient $patient): View
@@ -78,7 +100,7 @@ class PatientController extends Controller
     {
         $patient->update($request->validated());
 
-        return redirect()->route('patients.index')
+        return redirect()->route('patients.show', $patient)
             ->with('status', "La fiche de {$patient->full_name} a été modifiée.");
     }
 }
