@@ -9,7 +9,6 @@ use App\Models\Patient;
 use App\Services\DayPlanning;
 use App\Services\Statistics;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -42,11 +41,7 @@ class DashboardController extends Controller
     private function secretary(DayPlanning $planning, Statistics $statistics): View
     {
         $today = CarbonImmutable::today();
-        $doctors = Doctor::with(['user', 'specialty'])
-            ->whereHas('user', fn (Builder $q) => $q->where('is_active', true))
-            ->get()
-            ->sortBy(fn (Doctor $doctor) => $doctor->user->last_name)
-            ->values();
+        $doctors = Doctor::activeByName();
 
         // Rendez-vous du jour (hors annulés) : terminés et encore à venir.
         $todayStatuses = Appointment::onDate($today)->toBase()->pluck('status')->countBy();

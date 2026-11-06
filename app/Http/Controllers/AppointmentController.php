@@ -188,11 +188,7 @@ class AppointmentController extends Controller
      */
     private function doctors(): Collection
     {
-        return Doctor::with(['user', 'specialty'])
-            ->whereHas('user', fn (Builder $q) => $q->where('is_active', true))
-            ->get()
-            ->sortBy(fn (Doctor $doctor) => $doctor->user->last_name)
-            ->values();
+        return Doctor::activeByName();
     }
 
     /**
