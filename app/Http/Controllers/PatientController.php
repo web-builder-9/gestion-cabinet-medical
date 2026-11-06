@@ -173,6 +173,21 @@ class PatientController extends Controller
         ]);
     }
 
+    /**
+     * Envoie au patient l'e-mail pour choisir son mot de passe : il accède alors
+     * à son espace (patient inscrit au cabinet avant d'avoir un compte en ligne).
+     */
+    public function invite(Patient $patient, AccountInvitations $invitations): RedirectResponse
+    {
+        Gate::authorize('update', $patient);
+
+        if (! $invitations->send($patient->user)) {
+            return back()->with('error', 'Ajoutez d\'abord l\'adresse e-mail du patient.');
+        }
+
+        return back()->with('status', "Un e-mail d'accès à l'espace patient a été envoyé à {$patient->user->email}.");
+    }
+
     public function restore(Patient $patient): RedirectResponse
     {
         Gate::authorize('restore', $patient);

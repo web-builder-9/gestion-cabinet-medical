@@ -46,6 +46,7 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     });
 
     Route::resource('patients', PatientController::class);
+    Route::post('patients/{patient}/invitation', [PatientController::class, 'invite'])->name('patients.invite');
 
     // Agenda (maquette 11) et rendez-vous (maquettes 7 et 10). « nouveau » est
     // déclaré avant {appointment}, sinon il serait pris pour un numéro de rendez-vous.

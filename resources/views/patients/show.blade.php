@@ -47,6 +47,15 @@
                     <dt class="text-muted">Espace patient</dt>
                     <dd class="col-span-2">{{ $patient->hasPortalAccess() ? 'Accès en ligne actif' : 'Pas d\'accès en ligne' }}</dd>
                 </dl>
+                {{-- Le patient reçoit un e-mail pour choisir (ou rechoisir) son mot de passe. --}}
+                @if ($patient->user->email)
+                    @can('update', $patient)
+                        <form method="POST" action="{{ route('patients.invite', $patient) }}" class="border-t border-line px-5 py-4">
+                            @csrf
+                            <button type="submit" class="btn btn-secondary btn-sm">Envoyer l'accès à l'espace patient</button>
+                        </form>
+                    @endcan
+                @endif
             </section>
 
             {{-- Données de santé : visibles par les médecins uniquement (MedicalRecordPolicy, RG-21). --}}
