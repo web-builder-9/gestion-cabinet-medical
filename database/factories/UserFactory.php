@@ -3,7 +3,9 @@
 namespace Database\Factories;
 
 use App\Enums\Role;
+use App\Models\Doctor;
 use App\Models\User;
+use Database\Factories\Support\FakeIdentity;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -19,20 +21,20 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'last_name' => FakeIdentity::lastName(),
+            'first_name' => FakeIdentity::firstName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
+            'phone' => FakeIdentity::phone(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => Role::Patient,
-            'phone' => PatientFactory::phoneNumber(),
+            'is_active' => true,
         ];
     }
 
@@ -46,9 +48,9 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function doctor(): static
+    public function patient(): static
     {
-        return $this->state(fn (array $attributes) => ['role' => Role::Doctor]);
+        return $this->state(fn (array $attributes) => ['role' => Role::Patient]);
     }
 
     public function secretary(): static
@@ -56,8 +58,34 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => ['role' => Role::Secretary]);
     }
 
-    public function patient(): static
+    public function admin(): static
     {
-        return $this->state(fn (array $attributes) => ['role' => Role::Patient]);
+        return $this->state(fn (array $attributes) => ['role' => Role::Admin]);
+    }
+
+    /**
+     * Compte médecin, avec son profil (table doctors) et une spécialité.
+     */
+    public function doctor(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => Role::Doctor])
+            ->afterCreating(function (User $user) {
+                if (! $user->doctor()->exists()) {
+                    Doctor::factory()->for($user)->create();
+                }
+            });
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => ['is_active' => false]);
+    }
+
+    /**
+     * Patient créé au cabinet sans adresse e-mail (pas d'accès en ligne).
+     */
+    public function withoutEmail(): static
+    {
+        return $this->state(fn (array $attributes) => ['email' => null, 'email_verified_at' => null]);
     }
 }
