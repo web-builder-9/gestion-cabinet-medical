@@ -1,65 +1,47 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Personnel</h2>
-
-            @can('create', App\Models\User::class)
-                <a href="{{ route('staff.create') }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-800 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                    Ajouter un membre
-                </a>
-            @endcan
-        </div>
+<x-app-layout title="Utilisateurs" subtitle="Comptes du personnel : un seul rôle par compte.">
+    <x-slot name="actions">
+        @can('create', App\Models\User::class)
+            <a href="{{ route('staff.create') }}" class="btn btn-primary"><x-icon name="plus" /> Créer un compte</a>
+        @endcan
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
-            <x-flash-status />
+    <x-flash-status />
 
-            <div class="bg-white shadow-xs sm:rounded-lg overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50 text-left text-gray-600">
-                        <tr>
-                            <th class="px-6 py-3 font-medium">Nom</th>
-                            <th class="px-6 py-3 font-medium">Adresse e-mail</th>
-                            <th class="px-6 py-3 font-medium">Téléphone</th>
-                            <th class="px-6 py-3 font-medium">Rôle</th>
-                            <th class="px-6 py-3"><span class="sr-only">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse ($members as $member)
-                            <tr>
-                                <td class="px-6 py-4 font-medium text-gray-900">
-                                    {{ $member->full_name }}
-                                    @if ($member->is(Auth::user()))
-                                        <span class="text-gray-400">(vous)</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-gray-600">{{ $member->email }}</td>
-                                <td class="px-6 py-4 text-gray-600">{{ $member->phone ?? '—' }}</td>
-                                <td class="px-6 py-4">
-                                    {{ $member->role->label() }}
-                                    @if ($member->doctor)
-                                        <span class="text-gray-500">· {{ $member->doctor->specialty->name }}</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    @can('update', $member)
-                                        <a href="{{ route('staff.edit', $member) }}" class="text-indigo-600 hover:text-indigo-800">
-                                            Modifier
-                                        </a>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-gray-500">Aucun membre du personnel.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="card table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Rôle et spécialité</th>
+                    <th>Téléphone</th>
+                    <th><span class="sr-only">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($members as $member)
+                    <tr>
+                        <td>
+                            <div class="font-semibold">{{ $member->doctor ? $member->doctor->display_name : $member->full_name }}</div>
+                            <div class="text-xs text-muted">{{ $member->email }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-brand-soft text-brand">{{ $member->role->label() }}</span>
+                            @if ($member->doctor)
+                                <span class="ml-1 text-ink-3">{{ $member->doctor->specialty->name }}</span>
+                            @endif
+                        </td>
+                        <td class="text-ink-3">{{ $member->phone ?? '—' }}</td>
+                        <td class="text-right">
+                            @if ($member->is(Auth::user()))
+                                <span class="mr-3 text-sm text-muted">Vous</span>
+                            @endif
+                            @can('update', $member)
+                                <a href="{{ route('staff.edit', $member) }}" class="btn btn-secondary btn-sm">Modifier</a>
+                            @endcan
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 </x-app-layout>

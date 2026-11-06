@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentStatus;
 use App\Enums\Gender;
 use App\Enums\Role;
 use App\Http\Requests\PatientRequest;
@@ -31,17 +32,26 @@ class PatientController extends Controller
         Gate::authorize('viewAny', Patient::class);
 
         $search = trim((string) $request->query('q'));
+        $gender = Gender::tryFrom((string) $request->query('genre'));
+        $sort = $request->query('tri') === 'visite' ? 'visite' : 'nom';
 
         $patients = Patient::query()
             ->with('user')
+            // Date de la dernière consultation (rendez-vous terminé), calculée par la base.
+            ->withMax(['appointments as last_visit_at' => fn ($q) => $q->where('status', AppointmentStatus::Completed)], 'starts_at')
             ->search($search)
-            ->orderByName()
+            ->when($gender, fn ($q) => $q->where('gender', $gender))
+            ->when($sort === 'visite', fn ($q) => $q->orderByDesc('last_visit_at'), fn ($q) => $q->orderByName())
             ->paginate(self::PER_PAGE)
-            ->withQueryString(); // garde ?q=... dans les liens de pagination
+            ->withQueryString(); // garde la recherche et les filtres dans les liens de pagination
 
         return view('patients.index', [
             'patients' => $patients,
             'search' => $search,
+            'gender' => $gender,
+            'sort' => $sort,
+            'genders' => Gender::cases(),
+            'total' => Patient::count(),
         ]);
     }
 

@@ -12,14 +12,14 @@
     <div class="grid gap-6 sm:grid-cols-2">
         <div>
             <x-input-label for="last_name" value="Nom" />
-            <x-text-input id="last_name" name="last_name" type="text" class="mt-1 block w-full"
+            <x-text-input id="last_name" name="last_name" type="text"
                           :value="old('last_name', $member->last_name)" required autofocus />
             <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
         </div>
 
         <div>
             <x-input-label for="first_name" value="Prénom" />
-            <x-text-input id="first_name" name="first_name" type="text" class="mt-1 block w-full"
+            <x-text-input id="first_name" name="first_name" type="text"
                           :value="old('first_name', $member->first_name)" required />
             <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
         </div>
@@ -28,14 +28,14 @@
     <div class="grid gap-6 sm:grid-cols-2">
         <div>
             <x-input-label for="email" value="Adresse e-mail" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full"
+            <x-text-input id="email" name="email" type="email"
                           :value="old('email', $member->email)" required />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
         </div>
 
         <div>
             <x-input-label for="phone" value="Téléphone (facultatif)" />
-            <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full"
+            <x-text-input id="phone" name="phone" type="tel"
                           :value="old('phone', $member->phone)" placeholder="22 123 456" />
             <x-input-error class="mt-2" :messages="$errors->get('phone')" />
         </div>
@@ -46,16 +46,16 @@
             <x-input-label for="role" value="Rôle" />
             @if ($canChangeRole)
                 <select id="role" name="role" required x-model="role"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-xs">
+                        class="field">
                     @foreach ($roles as $role)
                         <option value="{{ $role->value }}" @selected($currentRole === $role->value)>{{ $role->label() }}</option>
                     @endforeach
                 </select>
             @else
                 {{-- Son propre rôle ne se modifie pas (voir UserPolicy::updateRole). --}}
-                <p class="mt-2 text-sm text-gray-700">
+                <p class="mt-2 text-sm text-ink-2">
                     {{ $member->role->label() }}
-                    <span class="text-gray-500">— vous ne pouvez pas modifier votre propre rôle.</span>
+                    <span class="text-muted">— vous ne pouvez pas modifier votre propre rôle.</span>
                 </p>
             @endif
             <x-input-error class="mt-2" :messages="$errors->get('role')" />
@@ -64,7 +64,7 @@
         <div x-show="role === 'doctor'" x-cloak>
             <x-input-label for="specialty_id" value="Spécialité (médecin)" />
             <select id="specialty_id" name="specialty_id"
-                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-xs">
+                    class="field">
                 <option value="">—</option>
                 @foreach ($specialties as $specialty)
                     <option value="{{ $specialty->id }}" @selected((int) old('specialty_id', $member->doctor?->specialty_id) === $specialty->id)>
@@ -79,7 +79,7 @@
     <div class="grid gap-6 sm:grid-cols-2">
         <div>
             <x-input-label for="password" :value="$editing ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe'" />
-            <x-text-input id="password" name="password" type="password" class="mt-1 block w-full"
+            <x-text-input id="password" name="password" type="password"
                           autocomplete="new-password" :required="! $editing" />
             <x-input-error class="mt-2" :messages="$errors->get('password')" />
         </div>
@@ -87,7 +87,7 @@
         <div>
             <x-input-label for="password_confirmation" value="Confirmer le mot de passe" />
             <x-text-input id="password_confirmation" name="password_confirmation" type="password"
-                          class="mt-1 block w-full" autocomplete="new-password" :required="! $editing" />
+                          autocomplete="new-password" :required="! $editing" />
         </div>
     </div>
 </div>
