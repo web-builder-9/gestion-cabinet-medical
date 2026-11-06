@@ -31,14 +31,19 @@
                         @forelse ($members as $member)
                             <tr>
                                 <td class="px-6 py-4 font-medium text-gray-900">
-                                    {{ $member->name }}
+                                    {{ $member->full_name }}
                                     @if ($member->is(Auth::user()))
                                         <span class="text-gray-400">(vous)</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-gray-600">{{ $member->email }}</td>
                                 <td class="px-6 py-4 text-gray-600">{{ $member->phone ?? '—' }}</td>
-                                <td class="px-6 py-4">{{ $member->role->label() }}</td>
+                                <td class="px-6 py-4">
+                                    {{ $member->role->label() }}
+                                    @if ($member->doctor)
+                                        <span class="text-gray-500">· {{ $member->doctor->specialty->name }}</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-right">
                                     @can('update', $member)
                                         <a href="{{ route('staff.edit', $member) }}" class="text-indigo-600 hover:text-indigo-800">

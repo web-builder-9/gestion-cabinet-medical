@@ -36,7 +36,7 @@
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-hidden transition ease-in-out duration-150">
                             <div>
-                                {{ Auth::user()->name }}
+                                {{ Auth::user()->full_name }}
                                 <span class="text-gray-400">· {{ Auth::user()->role->label() }}</span>
                             </div>
 
@@ -102,7 +102,7 @@
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-base text-gray-800">{{ Auth::user()->full_name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->role->label() }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
             </div>

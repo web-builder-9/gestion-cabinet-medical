@@ -3,145 +3,159 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * RG-03 : l'administrateur crée et modifie les comptes du personnel.
+ */
 class StaffManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $doctor;
+    private User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->doctor = User::factory()->doctor()->create(['name' => 'Dr Sami']);
+        $this->admin = User::factory()->admin()->create(['first_name' => 'Ridha', 'last_name' => 'Ferjani']);
     }
 
-    public function test_the_doctor_sees_the_staff_list_without_patient_accounts(): void
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function validData(array $overrides = []): array
     {
-        User::factory()->secretary()->create(['name' => 'Amira Secrétaire']);
-        User::factory()->patient()->create(['name' => 'Youssef Patient']);
+        return array_merge([
+            'last_name' => 'Ayari',
+            'first_name' => 'Ines',
+            'email' => 'ines@cabinet.test',
+            'phone' => '22 123 456',
+            'role' => 'secretary',
+            'password' => 'motdepasse1',
+            'password_confirmation' => 'motdepasse1',
+        ], $overrides);
+    }
 
-        $this->actingAs($this->doctor)
+    public function test_the_admin_sees_staff_accounts_but_not_patients(): void
+    {
+        User::factory()->secretary()->create(['first_name' => 'Nadia', 'last_name' => 'Jlassi']);
+        User::factory()->doctor()->create(['first_name' => 'Salma', 'last_name' => 'Ben Ali']);
+        User::factory()->patient()->create(['first_name' => 'Youssef', 'last_name' => 'Patient']);
+
+        $this->actingAs($this->admin)
             ->get('/personnel')
             ->assertOk()
-            ->assertSee('Dr Sami')
-            ->assertSee('Amira Secrétaire')
+            ->assertSee('Nadia Jlassi')
+            ->assertSee('Salma Ben Ali')
+            ->assertSee('Ridha Ferjani')
             ->assertDontSee('Youssef Patient');
     }
 
-    public function test_only_the_doctor_can_open_staff_management(): void
+    public function test_only_the_admin_can_open_account_management(): void
     {
-        $this->actingAs(User::factory()->secretary()->create())->get('/personnel')->assertForbidden();
-        $this->actingAs(User::factory()->patient()->create())->get('/personnel')->assertForbidden();
+        foreach ([User::factory()->doctor()->create(), User::factory()->secretary()->create(), User::factory()->patient()->create()] as $user) {
+            $this->actingAs($user)->get('/personnel')->assertForbidden();
+        }
     }
 
-    public function test_the_staff_link_appears_for_the_doctor_only(): void
+    public function test_the_admin_can_create_a_secretary_account(): void
     {
-        $this->actingAs($this->doctor)->get('/dashboard')->assertSee(route('staff.index'));
-
-        $this->actingAs(User::factory()->secretary()->create())
-            ->get('/dashboard')
-            ->assertDontSee(route('staff.index'));
-    }
-
-    public function test_the_doctor_can_create_a_secretary_account(): void
-    {
-        $this->actingAs($this->doctor)
-            ->post('/personnel', [
-                'name' => 'Ines Ayari',
-                'email' => 'ines@cabinet.test',
-                'phone' => '22 123 456',
-                'role' => 'secretary',
-                'password' => 'motdepasse',
-                'password_confirmation' => 'motdepasse',
-            ])
+        $this->actingAs($this->admin)
+            ->post('/personnel', $this->validData())
             ->assertSessionHasNoErrors()
             ->assertRedirect('/personnel');
 
         $created = User::where('email', 'ines@cabinet.test')->firstOrFail();
 
         $this->assertSame(Role::Secretary, $created->role);
-        $this->assertTrue(Hash::check('motdepasse', $created->password));
+        $this->assertTrue(Hash::check('motdepasse1', $created->password));
+        $this->assertNull($created->doctor);
+    }
+
+    public function test_a_doctor_account_needs_a_specialty_and_gets_a_doctor_profile(): void
+    {
+        $this->actingAs($this->admin)
+            ->post('/personnel', $this->validData(['role' => 'doctor']))
+            ->assertSessionHasErrors(['specialty_id' => 'Choisissez la spécialité du médecin.']);
+
+        $cardiology = Specialty::factory()->create(['name' => 'Cardiologie']);
+
+        $this->actingAs($this->admin)
+            ->post('/personnel', $this->validData(['role' => 'doctor', 'specialty_id' => $cardiology->id]))
+            ->assertSessionHasNoErrors();
+
+        $doctor = User::where('email', 'ines@cabinet.test')->firstOrFail()->doctor;
+        $this->assertSame('Cardiologie', $doctor->specialty->name);
     }
 
     public function test_a_patient_account_cannot_be_created_here(): void
     {
-        $this->actingAs($this->doctor)
-            ->post('/personnel', [
-                'name' => 'Faux Patient',
-                'email' => 'faux@cabinet.test',
-                'role' => 'patient',
-                'password' => 'motdepasse',
-                'password_confirmation' => 'motdepasse',
-            ])
+        $this->actingAs($this->admin)
+            ->post('/personnel', $this->validData(['role' => 'patient']))
             ->assertSessionHasErrors(['role' => 'La valeur choisie pour rôle n\'est pas valide.']);
 
-        $this->assertDatabaseMissing('users', ['email' => 'faux@cabinet.test']);
+        $this->assertDatabaseMissing('users', ['email' => 'ines@cabinet.test']);
     }
 
     public function test_an_email_cannot_be_used_twice(): void
     {
-        $this->actingAs($this->doctor)
-            ->post('/personnel', [
-                'name' => 'Doublon',
-                'email' => $this->doctor->email,
-                'role' => 'secretary',
-                'password' => 'motdepasse',
-                'password_confirmation' => 'motdepasse',
-            ])
+        $this->actingAs($this->admin)
+            ->post('/personnel', $this->validData(['email' => $this->admin->email]))
             ->assertSessionHasErrors(['email' => 'La valeur du champ adresse e-mail est déjà utilisée.']);
     }
 
-    public function test_the_doctor_can_change_another_member_role(): void
+    public function test_the_admin_can_change_another_member_role(): void
     {
         $secretary = User::factory()->secretary()->create();
+        $specialty = Specialty::factory()->create();
 
-        $this->actingAs($this->doctor)
+        $this->actingAs($this->admin)
             ->put("/personnel/{$secretary->id}", [
-                'name' => $secretary->name,
+                'last_name' => $secretary->last_name,
+                'first_name' => $secretary->first_name,
                 'email' => $secretary->email,
                 'role' => 'doctor',
+                'specialty_id' => $specialty->id,
             ])
             ->assertSessionHasNoErrors()
             ->assertRedirect('/personnel');
 
-        $this->assertSame(Role::Doctor, $secretary->fresh()->role);
+        $secretary->refresh();
+        $this->assertSame(Role::Doctor, $secretary->role);
+        $this->assertSame($specialty->id, $secretary->doctor->specialty_id);
     }
 
-    public function test_the_doctor_cannot_change_their_own_role(): void
+    public function test_the_admin_cannot_change_their_own_role(): void
     {
-        $this->actingAs($this->doctor)
-            ->put("/personnel/{$this->doctor->id}", [
-                'name' => 'Dr Sami',
-                'email' => $this->doctor->email,
-                'role' => 'secretary',
+        $this->actingAs($this->admin)
+            ->put("/personnel/{$this->admin->id}", [
+                'last_name' => 'Ferjani', 'first_name' => 'Ridha', 'email' => $this->admin->email, 'role' => 'secretary',
             ])
             ->assertSessionHasErrors(['role' => 'Vous ne pouvez pas modifier votre propre rôle.']);
 
-        $this->assertSame(Role::Doctor, $this->doctor->fresh()->role);
+        $this->assertSame(Role::Admin, $this->admin->fresh()->role);
     }
 
-    public function test_the_doctor_can_edit_their_own_details(): void
+    public function test_the_admin_can_edit_their_own_details(): void
     {
-        $this->actingAs($this->doctor)
-            ->get("/personnel/{$this->doctor->id}/edit")
+        $this->actingAs($this->admin)
+            ->get("/personnel/{$this->admin->id}/edit")
             ->assertOk()
             ->assertSee('vous ne pouvez pas modifier votre propre rôle');
 
-        $this->actingAs($this->doctor)
-            ->put("/personnel/{$this->doctor->id}", [
-                'name' => 'Dr Sami Ben Salah',
-                'email' => $this->doctor->email,
+        $this->actingAs($this->admin)
+            ->put("/personnel/{$this->admin->id}", [
+                'last_name' => 'Ferjani', 'first_name' => 'Ridha Ali', 'email' => $this->admin->email,
             ])
             ->assertSessionHasNoErrors();
 
-        $this->assertSame('Dr Sami Ben Salah', $this->doctor->fresh()->name);
-        $this->assertSame(Role::Doctor, $this->doctor->fresh()->role);
+        $this->assertSame('Ridha Ali', $this->admin->fresh()->first_name);
     }
 
     public function test_an_empty_password_keeps_the_current_one(): void
@@ -149,12 +163,9 @@ class StaffManagementTest extends TestCase
         $secretary = User::factory()->secretary()->create();
         $oldHash = $secretary->password;
 
-        $this->actingAs($this->doctor)->put("/personnel/{$secretary->id}", [
-            'name' => 'Nouveau nom',
-            'email' => $secretary->email,
-            'role' => 'secretary',
-            'password' => '',
-            'password_confirmation' => '',
+        $this->actingAs($this->admin)->put("/personnel/{$secretary->id}", [
+            'last_name' => 'Nouveau', 'first_name' => 'Nom', 'email' => $secretary->email, 'role' => 'secretary',
+            'password' => '', 'password_confirmation' => '',
         ])->assertSessionHasNoErrors();
 
         $this->assertSame($oldHash, $secretary->fresh()->password);
@@ -164,6 +175,6 @@ class StaffManagementTest extends TestCase
     {
         $patient = User::factory()->patient()->create();
 
-        $this->actingAs($this->doctor)->get("/personnel/{$patient->id}/edit")->assertForbidden();
+        $this->actingAs($this->admin)->get("/personnel/{$patient->id}/edit")->assertForbidden();
     }
 }

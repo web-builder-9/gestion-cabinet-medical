@@ -6,45 +6,45 @@ use App\Models\Patient;
 use App\Models\User;
 
 /**
- * Fiche administrative du patient (identité, coordonnées).
+ * Dossier administratif du patient (identité, coordonnées).
  * Laravel associe automatiquement cette Policy au modèle Patient.
  */
 class PatientPolicy
 {
+    /**
+     * BF-12 : la secrétaire gère les dossiers ; le médecin les consulte (BF-20).
+     */
     public function viewAny(User $user): bool
     {
-        return $user->isStaff();
+        return $user->isCareStaff();
     }
 
     /**
-     * Le personnel voit toutes les fiches ; un patient voit uniquement la sienne.
+     * Le personnel voit tous les dossiers ; un patient uniquement le sien.
      */
     public function view(User $user, Patient $patient): bool
     {
-        return $user->isStaff() || $this->isOwnRecord($user, $patient);
+        return $user->isCareStaff() || $this->isOwn($user, $patient);
     }
 
     public function create(User $user): bool
     {
-        return $user->isStaff();
+        return $user->isCareStaff();
     }
 
     public function update(User $user, Patient $patient): bool
     {
-        return $user->isStaff();
+        return $user->isCareStaff();
     }
 
     /**
-     * Suppression (douce) réservée au médecin.
+     * Archivage (suppression logique, RG-22) réservé au médecin.
      */
     public function delete(User $user, Patient $patient): bool
     {
         return $user->isDoctor();
     }
 
-    /**
-     * Liste des patients archivés (supprimés « en douceur »).
-     */
     public function viewArchived(User $user): bool
     {
         return $user->isDoctor();
@@ -56,16 +56,15 @@ class PatientPolicy
     }
 
     /**
-     * Suppression définitive interdite à tous : on garde l'historique médical.
+     * RG-22 : aucune suppression physique.
      */
     public function forceDelete(User $user, Patient $patient): bool
     {
         return false;
     }
 
-    private function isOwnRecord(User $user, Patient $patient): bool
+    private function isOwn(User $user, Patient $patient): bool
     {
-        // user()->is() compare les clés sans requête SQL supplémentaire.
-        return $user->isPatient() && $patient->user()->is($user);
+        return $user->isPatient() && $patient->user_id === $user->id;
     }
 }

@@ -6,39 +6,41 @@ use App\Models\Appointment;
 use App\Models\User;
 
 /**
- * Rendez-vous : gérés par le médecin et la secrétaire.
- * Un patient pourra consulter les siens (espace patient, plus tard).
+ * Rendez-vous : gérés par la secrétaire et le médecin ; un patient voit les siens.
+ * (Les règles de modification par le patient, RG-16, arrivent avec l'espace patient.)
  */
 class AppointmentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isStaff();
+        return $user->isCareStaff();
     }
 
     public function view(User $user, Appointment $appointment): bool
     {
-        if ($user->isStaff()) {
-            return true;
-        }
-
-        $patient = $appointment->patient;
-
-        return $user->isPatient() && $patient !== null && $patient->user()->is($user);
+        return $user->isCareStaff() || $this->isOwn($user, $appointment);
     }
 
     public function create(User $user): bool
     {
-        return $user->isStaff();
+        return $user->isCareStaff();
     }
 
     public function update(User $user, Appointment $appointment): bool
     {
-        return $user->isStaff();
+        return $user->isCareStaff();
     }
 
+    /**
+     * RG-22 : un rendez-vous n'est jamais supprimé, il est annulé.
+     */
     public function delete(User $user, Appointment $appointment): bool
     {
-        return $user->isStaff();
+        return false;
+    }
+
+    private function isOwn(User $user, Appointment $appointment): bool
+    {
+        return $user->isPatient() && $appointment->patient?->user_id === $user->id;
     }
 }

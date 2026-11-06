@@ -40,9 +40,9 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     Route::resource('patients', PatientController::class);
 });
 
-// Gestion du personnel : médecin uniquement (middleware + UserPolicy).
+// Comptes du personnel : administrateur uniquement (RG-03 ; middleware + UserPolicy).
 // URL en français (/personnel), noms de routes en anglais (staff.*).
-Route::middleware(['auth', 'role:doctor'])->group(function () {
+Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('personnel', StaffController::class)
         ->parameters(['personnel' => 'user'])
         ->names('staff')

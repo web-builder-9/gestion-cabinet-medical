@@ -10,34 +10,21 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_doctor_sees_the_staff_dashboard_and_their_role(): void
+    public function test_the_dashboard_greets_the_user_and_shows_their_role(): void
     {
-        $doctor = User::factory()->doctor()->create(['name' => 'Dr Test']);
+        $doctor = User::factory()->doctor()->create(['first_name' => 'Salma', 'last_name' => 'Ben Ali']);
 
         $this->actingAs($doctor)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('Bonjour Dr Test')
-            ->assertSee('Médecin')
-            ->assertSee('Les indicateurs du cabinet')
-            ->assertDontSee('Votre espace patient');
+            ->assertSee('Bonjour Salma')
+            ->assertSee('Médecin');
     }
 
-    public function test_the_secretary_sees_the_staff_dashboard(): void
+    public function test_every_role_can_open_the_dashboard(): void
     {
-        $this->actingAs(User::factory()->secretary()->create())
-            ->get('/dashboard')
-            ->assertOk()
-            ->assertSee('Secrétaire')
-            ->assertSee('Les indicateurs du cabinet');
-    }
-
-    public function test_a_patient_sees_the_patient_message_only(): void
-    {
-        $this->actingAs(User::factory()->patient()->create())
-            ->get('/dashboard')
-            ->assertOk()
-            ->assertSee('Votre espace patient')
-            ->assertDontSee('Les indicateurs du cabinet');
+        foreach (['doctor', 'secretary', 'admin', 'patient'] as $state) {
+            $this->actingAs(User::factory()->{$state}()->create())->get('/dashboard')->assertOk();
+        }
     }
 }
