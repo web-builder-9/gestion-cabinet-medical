@@ -24,6 +24,19 @@ enum Role: string
     }
 
     /**
+     * Libellé au pluriel (onglets de la page Utilisateurs).
+     */
+    public function pluralLabel(): string
+    {
+        return match ($this) {
+            self::Patient => 'Patients',
+            self::Doctor => 'Médecins',
+            self::Secretary => 'Secrétaires',
+            self::Admin => 'Administrateurs',
+        };
+    }
+
+    /**
      * Rôles du personnel, dont les comptes sont créés par l'administrateur (RG-03).
      *
      * @return list<self>

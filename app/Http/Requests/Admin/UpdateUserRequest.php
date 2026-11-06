@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Admin;
 
 use App\Enums\Role;
 use App\Models\Specialty;
@@ -9,12 +9,12 @@ use App\Support\PhoneNumber;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * Modification d'un compte du personnel par l'administrateur.
+ * Le mot de passe n'y figure pas : chacun le change depuis son profil.
  */
-class UpdateStaffRequest extends FormRequest
+class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -53,8 +53,7 @@ class UpdateStaffRequest extends FormRequest
                 'nullable',
                 Rule::exists(Specialty::class, 'id'),
             ],
-            // Laisser vide pour garder le mot de passe actuel.
-            'password' => ['nullable', 'confirmed', Password::defaults()],
+            'presentation' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -71,7 +70,7 @@ class UpdateStaffRequest extends FormRequest
     }
 
     /**
-     * Le compte modifié, injecté par la route (/personnel/{user}/edit).
+     * Le compte modifié, injecté par la route.
      */
     public function account(): User
     {

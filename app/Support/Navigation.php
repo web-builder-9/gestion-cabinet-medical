@@ -49,8 +49,8 @@ class Navigation
                 ['Consultations', 'consultations.index', 'consultation', 'consultations.*'],
             ],
             Role::Admin => [
-                ['Utilisateurs', 'staff.index', 'users', 'staff.*'],
-                ['Spécialités et paramètres', 'admin.settings', 'settings', 'admin.*'],
+                ['Utilisateurs', 'admin.users.index', 'users', 'admin.users.*'],
+                ['Spécialités et paramètres', 'admin.settings', 'settings', 'admin.settings*'],
             ],
             Role::Patient => [
                 ['Prendre rendez-vous', 'booking.create', 'plus', 'booking.*'],
