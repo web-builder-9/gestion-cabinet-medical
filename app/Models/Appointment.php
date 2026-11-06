@@ -206,6 +206,22 @@ class Appointment extends Model
     }
 
     /**
+     * Rendez-vous qui tombent pendant une indisponibilité de leur médecin
+     * (déclarée après la prise du rendez-vous) : le secrétariat doit les déplacer.
+     *
+     * @param  Builder<Appointment>  $query
+     */
+    public function scopeDuringUnavailability(Builder $query): void
+    {
+        $query->whereExists(
+            Unavailability::query()
+                ->whereColumn('unavailabilities.doctor_id', 'appointments.doctor_id')
+                ->whereColumn('unavailabilities.starts_at', '<', 'appointments.ends_at')
+                ->whereColumn('unavailabilities.ends_at', '>', 'appointments.starts_at')
+        );
+    }
+
+    /**
      * @param  Builder<Appointment>  $query
      */
     public function scopeOnDate(Builder $query, DateTimeInterface $date): void
