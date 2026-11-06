@@ -7,9 +7,9 @@ use App\Models\Appointment;
 use App\Models\User;
 
 /**
- * Rendez-vous : gérés par la secrétaire et le médecin ; un patient voit les siens.
+ * Rendez-vous : gérés par la secrétaire et le médecin ; un patient voit les siens
+ * et peut les modifier ou les annuler en ligne jusqu'au délai fixé (RG-16).
  * Les actions suivent les transitions de RG-17 (un état final ne change plus).
- * (Les règles de modification par le patient, RG-16, arrivent avec l'espace patient.)
  */
 class AppointmentPolicy
 {
@@ -29,10 +29,15 @@ class AppointmentPolicy
     }
 
     /**
-     * Déplacer : seulement un rendez-vous encore actif (En attente ou Confirmé).
+     * Déplacer : seulement un rendez-vous encore actif (En attente ou Confirmé) ;
+     * pour le patient, le sien et avant le délai (RG-16).
      */
     public function update(User $user, Appointment $appointment): bool
     {
+        if ($user->isPatient()) {
+            return $this->isOwn($user, $appointment) && $appointment->canBeChangedOnline();
+        }
+
         return $user->isCareStaff() && $appointment->isActive();
     }
 
@@ -45,10 +50,14 @@ class AppointmentPolicy
     }
 
     /**
-     * Annuler libère le créneau (→ Annulé).
+     * Annuler libère le créneau (→ Annulé) ; pour le patient, le sien et avant le délai (RG-16).
      */
     public function cancel(User $user, Appointment $appointment): bool
     {
+        if ($user->isPatient()) {
+            return $this->isOwn($user, $appointment) && $appointment->canBeChangedOnline();
+        }
+
         return $user->isCareStaff() && $appointment->status->canTransitionTo(AppointmentStatus::Cancelled);
     }
 

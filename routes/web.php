@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
 use App\Http\Controllers\Doctor\UnavailabilityController;
 use App\Http\Controllers\MedicalRecordController;
+use App\Http\Controllers\Patient\BookingController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,16 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     Route::patch('rendez-vous/{appointment}/confirmer', [AppointmentStatusController::class, 'confirm'])->name('appointments.confirm');
     Route::patch('rendez-vous/{appointment}/annuler', [AppointmentStatusController::class, 'cancel'])->name('appointments.cancel');
     Route::patch('rendez-vous/{appointment}/absent', [AppointmentStatusController::class, 'noShow'])->name('appointments.no-show');
+});
+
+// Espace patient : prise de rendez-vous en ligne, modification et annulation (RG-16).
+// « Mes rendez-vous » est le tableau de bord du patient (/dashboard).
+Route::middleware(['auth', 'role:patient'])->group(function () {
+    Route::get('prendre-rendez-vous', [BookingController::class, 'create'])->name('booking.create');
+    Route::post('prendre-rendez-vous', [BookingController::class, 'store'])->name('booking.store');
+    Route::get('mes-rendez-vous/{appointment}/modifier', [BookingController::class, 'edit'])->name('booking.edit');
+    Route::put('mes-rendez-vous/{appointment}', [BookingController::class, 'update'])->name('booking.update');
+    Route::patch('mes-rendez-vous/{appointment}/annuler', [BookingController::class, 'cancel'])->name('booking.cancel');
 });
 
 // Disponibilités et indisponibilités : chaque médecin gère les siennes

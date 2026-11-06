@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AppointmentStatus;
 use App\Exceptions\InvalidStatusTransition;
+use Carbon\CarbonImmutable;
 use Database\Factories\AppointmentFactory;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -120,6 +121,23 @@ class Appointment extends Model
     public function isActive(): bool
     {
         return $this->status->blocksSlot();
+    }
+
+    /**
+     * RG-16 : heure limite pour modifier ou annuler en ligne (24 h avant par défaut).
+     */
+    public function onlineChangeDeadline(): CarbonImmutable
+    {
+        return $this->starts_at->subHours(Setting::current()->cancellation_hours);
+    }
+
+    /**
+     * RG-16 : le patient peut-il encore modifier ou annuler ce rendez-vous lui-même ?
+     * Passé le délai, seul le secrétariat peut le faire.
+     */
+    public function canBeChangedOnline(): bool
+    {
+        return $this->isActive() && now()->lt($this->onlineChangeDeadline());
     }
 
     /**
