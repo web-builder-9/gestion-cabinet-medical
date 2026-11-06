@@ -3,20 +3,33 @@
 namespace App\Enums;
 
 /**
- * Rôle d'un utilisateur. Stocké en texte dans users.role.
+ * Rôle d'un utilisateur (énumération « Role » du diagramme de classes).
+ * RG-01 : chaque compte possède un seul rôle.
  */
 enum Role: string
 {
+    case Patient = 'patient';
     case Doctor = 'doctor';
     case Secretary = 'secretary';
-    case Patient = 'patient';
+    case Admin = 'admin';
 
     public function label(): string
     {
         return match ($this) {
+            self::Patient => 'Patient',
             self::Doctor => 'Médecin',
             self::Secretary => 'Secrétaire',
-            self::Patient => 'Patient',
+            self::Admin => 'Administrateur',
         };
+    }
+
+    /**
+     * Rôles du personnel, dont les comptes sont créés par l'administrateur (RG-03).
+     *
+     * @return list<self>
+     */
+    public static function staff(): array
+    {
+        return [self::Doctor, self::Secretary, self::Admin];
     }
 }

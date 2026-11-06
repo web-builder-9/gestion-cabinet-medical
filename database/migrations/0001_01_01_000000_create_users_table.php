@@ -11,12 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Classe « Utilisateur » du diagramme : attributs communs à tous les rôles.
+        // Patient et Médecin la spécialisent (tables patients et doctors, liées en 1-1).
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('last_name', 100);
+            $table->string('first_name', 100);
+            // Facultative pour un patient créé au cabinet sans e-mail (pas d'accès en ligne).
+            $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->string('phone', 20)->nullable()->unique(); // RG-05
             $table->string('password');
+            $table->string('role', 20)->default('patient')->index(); // RG-01 : un seul rôle
+            $table->boolean('is_active')->default(true); // RG-02 : un compte désactivé ne se connecte plus
             $table->rememberToken();
             $table->timestamps();
         });

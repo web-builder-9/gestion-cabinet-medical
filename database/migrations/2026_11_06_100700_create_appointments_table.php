@@ -6,23 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Classe « RendezVous ». Jamais supprimé : un rendez-vous annulé reste en base (RG-22).
+     */
     public function up(): void
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
-            // restrictOnDelete : impossible de supprimer définitivement un patient
-            // ou un médecin qui a des rendez-vous (on garde l'historique).
             $table->foreignId('patient_id')->constrained()->restrictOnDelete();
-            $table->foreignId('doctor_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('doctor_id')->constrained()->restrictOnDelete();
             $table->dateTime('starts_at');
             $table->dateTime('ends_at');
-            $table->string('reason')->nullable();
-            $table->string('status', 20)->default('scheduled');
-            $table->text('notes')->nullable();
-            $table->timestamps();
+            $table->string('reason')->nullable(); // motif
+            $table->string('status', 20)->default('pending'); // enum AppointmentStatus
+            $table->text('notes')->nullable(); // notes de la secrétaire pour le médecin
+            $table->timestamps(); // created_at = « creeLe »
 
-            // Accélère l'agenda d'un médecin et la détection des conflits.
+            // Agenda d'un médecin, rendez-vous d'un patient, et détection des conflits.
             $table->index(['doctor_id', 'starts_at']);
+            $table->index(['patient_id', 'starts_at']);
             $table->index('status');
         });
     }
