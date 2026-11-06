@@ -29,6 +29,8 @@ class DashboardController extends Controller
         return match (true) {
             // L'administrateur arrive sur la gestion des comptes (maquette 16).
             $user->isAdmin() => redirect()->route('admin.users.index'),
+            // Le médecin arrive sur son agenda (maquette 11).
+            $user->isDoctor() => redirect()->route('agenda'),
             $user->isSecretary() => $this->secretary($planning, $statistics),
             default => view('dashboard'),
         };

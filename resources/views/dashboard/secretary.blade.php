@@ -97,6 +97,7 @@
     <section class="card overflow-hidden">
         <div class="card-header">
             <h2 class="card-title">Planning du jour</h2>
+            <a href="{{ route('agenda') }}" class="link text-sm">Planning de la semaine</a>
         </div>
         <div class="table-wrap">
             <table class="table">

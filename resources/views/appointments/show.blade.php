@@ -3,6 +3,12 @@
 --}}
 <x-app-layout :title="'Rendez-vous du '.$appointment->starts_at->translatedFormat('l j F Y')"
               :subtitle="$appointment->starts_at->format('H:i').' – '.$appointment->ends_at->format('H:i').' · '.$appointment->doctor->display_name">
+    <x-slot name="actions">
+        <a href="{{ route('agenda', ['medecin' => $appointment->doctor_id, 'date' => $appointment->starts_at->format('Y-m-d')]) }}" class="btn btn-secondary">
+            <x-icon name="calendar" /> Voir dans l'agenda
+        </a>
+    </x-slot>
+
     <x-flash-status />
 
     <div class="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">

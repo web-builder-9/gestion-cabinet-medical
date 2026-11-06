@@ -4,6 +4,7 @@
 --}}
 <x-app-layout title="Rendez-vous" :subtitle="trans_choice(':count rendez-vous|:count rendez-vous', $appointments->total())">
     <x-slot name="actions">
+        <a href="{{ route('agenda') }}" class="btn btn-secondary"><x-icon name="calendar" /> Planning de la semaine</a>
         @can('create', App\Models\Appointment::class)
             <a href="{{ route('appointments.create') }}" class="btn btn-primary"><x-icon name="plus" /> Nouveau rendez-vous</a>
         @endcan

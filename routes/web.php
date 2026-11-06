@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SpecialtyController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentStatusController;
 use App\Http\Controllers\DashboardController;
@@ -45,8 +46,9 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
 
     Route::resource('patients', PatientController::class);
 
-    // Rendez-vous (maquettes 7 et 10). « nouveau » est
+    // Agenda (maquette 11) et rendez-vous (maquettes 7 et 10). « nouveau » est
     // déclaré avant {appointment}, sinon il serait pris pour un numéro de rendez-vous.
+    Route::get('agenda', AgendaController::class)->name('agenda');
     Route::get('rendez-vous', [AppointmentController::class, 'index'])->name('appointments.index');
     Route::get('rendez-vous/nouveau', [AppointmentController::class, 'create'])->name('appointments.create');
     Route::post('rendez-vous', [AppointmentController::class, 'store'])->name('appointments.store');
