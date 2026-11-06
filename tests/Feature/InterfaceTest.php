@@ -27,6 +27,7 @@ class InterfaceTest extends TestCase
         $this->actingAs(User::factory()->admin()->create())->get('/admin/utilisateurs')
             ->assertSee('Administration')
             ->assertSee('Utilisateurs')
+            ->assertSee('Spécialités et paramètres')
             ->assertDontSee(route('patients.index'));
     }
 

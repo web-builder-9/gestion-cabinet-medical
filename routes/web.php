@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SpecialtyController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicalRecordController;
@@ -50,6 +52,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('utilisateurs/{user}/desactiver', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::patch('utilisateurs/{user}/reactiver', [UserController::class, 'activate'])->name('users.activate');
     Route::post('utilisateurs/{user}/invitation', [UserController::class, 'invite'])->name('users.invite');
+
+    Route::get('parametres', [SettingController::class, 'edit'])->name('settings');
+    Route::put('parametres', [SettingController::class, 'update'])->name('settings.update');
+
+    Route::post('specialites', [SpecialtyController::class, 'store'])->name('specialties.store');
+    Route::put('specialites/{specialty}', [SpecialtyController::class, 'update'])->name('specialties.update');
+    Route::delete('specialites/{specialty}', [SpecialtyController::class, 'destroy'])->name('specialties.destroy');
 });
 
 require __DIR__.'/auth.php';

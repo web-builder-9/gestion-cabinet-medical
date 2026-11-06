@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Appointment;
+use App\Models\Doctor;
 use App\Models\MedicalRecord;
 use App\Models\Patient;
+use App\Models\Setting;
+use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -111,6 +114,7 @@ class PolicyTest extends TestCase
             'créer un compte' => ['create', false, false, true, false],
             'modifier un compte' => ['update', false, false, true, false],
             'changer un rôle' => ['updateRole', false, false, true, false],
+            'désactiver ou réactiver un compte' => ['toggleActive', false, false, true, false],
             'supprimer un compte' => ['delete', false, false, false, false],
         ];
     }
@@ -121,6 +125,46 @@ class PolicyTest extends TestCase
         $target = in_array($ability, ['viewAny', 'create'], true) ? User::class : User::factory()->secretary()->create();
 
         $this->assertRights($ability, $target, $expected);
+    }
+
+    /**
+     * @return array<string, array{string, bool, bool, bool, bool}>
+     */
+    public static function specialtyMatrix(): array
+    {
+        return [
+            'ajouter une spécialité' => ['create', false, false, true, false],
+            'modifier une spécialité' => ['update', false, false, true, false],
+            'supprimer une spécialité sans médecin' => ['delete', false, false, true, false],
+        ];
+    }
+
+    #[DataProvider('specialtyMatrix')]
+    public function test_specialty_rights(string $ability, bool ...$expected): void
+    {
+        $target = $ability === 'create' ? Specialty::class : Specialty::factory()->create();
+
+        $this->assertRights($ability, $target, $expected);
+    }
+
+    public function test_a_specialty_given_to_a_doctor_cannot_be_deleted(): void
+    {
+        $specialty = Specialty::factory()->create();
+        Doctor::factory()->for($specialty)->create();
+
+        $this->assertFalse($this->users['Administrateur']->can('delete', $specialty));
+    }
+
+    public function test_only_the_admin_changes_the_settings(): void
+    {
+        $this->assertRights('update', Setting::current(), [false, false, true, false]);
+    }
+
+    public function test_nobody_can_deactivate_their_own_account(): void
+    {
+        $admin = $this->users['Administrateur'];
+
+        $this->assertFalse($admin->can('toggleActive', $admin));
     }
 
     public function test_a_patient_can_see_their_own_file_and_appointments_only(): void
