@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use App\Notifications\ResetPasswordNotification;
 use App\Support\PhoneNumber;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -75,6 +76,16 @@ class User extends Authenticatable
     protected function phone(): Attribute
     {
         return Attribute::set(fn (?string $value) => PhoneNumber::format($value));
+    }
+
+    /**
+     * E-mail « Mot de passe oublié » en français.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     public function hasRole(Role ...$roles): bool
