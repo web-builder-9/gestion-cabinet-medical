@@ -94,6 +94,11 @@ class PatientController extends Controller
             $status .= " Un e-mail l'invite à choisir son mot de passe pour l'espace patient.";
         }
 
+        // Bouton « Enregistrer et donner un rendez-vous » (maquette 9).
+        if ($request->input('next') === 'appointment') {
+            return redirect()->route('appointments.create', ['patient' => $patient->id])->with('status', $status);
+        }
+
         return redirect()->route('patients.show', $patient)->with('status', $status);
     }
 

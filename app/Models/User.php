@@ -61,6 +61,14 @@ class User extends Authenticatable
     }
 
     /**
+     * « K. Trabelsi » : forme courte des plannings et de l'agenda.
+     */
+    protected function shortName(): Attribute
+    {
+        return Attribute::get(fn () => trim(mb_substr((string) $this->first_name, 0, 1).". {$this->last_name}"));
+    }
+
+    /**
      * Initiales affichées dans les pastilles (« AB » pour Amira Ben Salah).
      */
     protected function initials(): Attribute

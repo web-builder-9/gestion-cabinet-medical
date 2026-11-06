@@ -101,9 +101,39 @@ class PolicyTest extends TestCase
     #[DataProvider('appointmentMatrix')]
     public function test_appointment_rights(string $ability, bool ...$expected): void
     {
-        $target = in_array($ability, ['viewAny', 'create'], true) ? Appointment::class : Appointment::factory()->create();
+        $target = in_array($ability, ['viewAny', 'create'], true)
+            ? Appointment::class
+            : Appointment::factory()->at(now()->addDay())->confirmed()->create();
 
         $this->assertRights($ability, $target, $expected);
+    }
+
+    /**
+     * RG-17 : les actions proposées suivent les transitions autorisées.
+     */
+    public function test_appointment_actions_follow_the_allowed_transitions(): void
+    {
+        $secretary = $this->users['Secrétaire'];
+        $pending = Appointment::factory()->at(now()->addDay())->pending()->create();
+        $confirmedPast = Appointment::factory()->at(now()->subHour())->confirmed()->create();
+        $confirmedFuture = Appointment::factory()->at(now()->addDay())->confirmed()->create();
+        $cancelled = Appointment::factory()->at(now()->addDay())->cancelled()->create();
+
+        $this->assertTrue($secretary->can('confirm', $pending));
+        $this->assertFalse($secretary->can('confirm', $confirmedFuture));
+        $this->assertTrue($secretary->can('cancel', $pending));
+        $this->assertTrue($secretary->can('markNoShow', $confirmedPast));
+        $this->assertFalse($secretary->can('markNoShow', $confirmedFuture), 'Absent seulement une fois l\'heure passée.');
+        $this->assertFalse($secretary->can('markNoShow', $pending));
+
+        // Un état final ne change plus.
+        foreach (['update', 'confirm', 'cancel', 'markNoShow'] as $ability) {
+            $this->assertFalse($secretary->can($ability, $cancelled), $ability);
+        }
+
+        // Ni l'administrateur ni un patient ne gèrent les rendez-vous du cabinet.
+        $this->assertFalse($this->users['Administrateur']->can('confirm', $pending));
+        $this->assertFalse($this->users['Patient']->can('cancel', $pending));
     }
 
     /**

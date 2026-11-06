@@ -88,7 +88,14 @@
 
         <div class="flex flex-col gap-5">
             <section class="card">
-                <div class="card-header"><h2 class="card-title">Rendez-vous à venir</h2></div>
+                <div class="card-header">
+                    <h2 class="card-title">Rendez-vous à venir</h2>
+                    @can('create', App\Models\Appointment::class)
+                        <a href="{{ route('appointments.create', ['patient' => $patient->id]) }}" class="btn btn-primary btn-sm">
+                            <x-icon name="plus" class="size-4" /> Donner un rendez-vous
+                        </a>
+                    @endcan
+                </div>
                 @include('patients.partials.appointments', ['appointments' => $upcoming, 'empty' => 'Aucun rendez-vous à venir.'])
             </section>
 

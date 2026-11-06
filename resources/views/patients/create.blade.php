@@ -13,7 +13,9 @@
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line p-5 sm:p-6">
             <a href="{{ route('patients.index') }}" class="btn btn-secondary">Annuler</a>
-            <x-primary-button>Enregistrer le dossier</x-primary-button>
+            <button type="submit" class="btn btn-secondary">Enregistrer le dossier</button>
+            {{-- Maquette 9 : enchaîner directement sur la prise de rendez-vous. --}}
+            <button type="submit" name="next" value="appointment" class="btn btn-primary">Enregistrer et donner un rendez-vous</button>
         </div>
     </form>
 </x-app-layout>
