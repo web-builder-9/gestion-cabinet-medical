@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SpecialtyController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Doctor\AvailabilityController;
+use App\Http\Controllers\Doctor\UnavailabilityController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ProfileController;
@@ -40,6 +42,19 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     });
 
     Route::resource('patients', PatientController::class);
+});
+
+// Disponibilités et indisponibilités : chaque médecin gère les siennes
+// (middleware + AvailabilityPolicy / UnavailabilityPolicy).
+Route::middleware(['auth', 'role:doctor'])->group(function () {
+    Route::get('disponibilites', [AvailabilityController::class, 'index'])->name('availabilities.index');
+    Route::post('disponibilites', [AvailabilityController::class, 'store'])->name('availabilities.store');
+    Route::get('disponibilites/{availability}/modifier', [AvailabilityController::class, 'edit'])->name('availabilities.edit');
+    Route::put('disponibilites/{availability}', [AvailabilityController::class, 'update'])->name('availabilities.update');
+    Route::delete('disponibilites/{availability}', [AvailabilityController::class, 'destroy'])->name('availabilities.destroy');
+
+    Route::post('indisponibilites', [UnavailabilityController::class, 'store'])->name('unavailabilities.store');
+    Route::delete('indisponibilites/{unavailability}', [UnavailabilityController::class, 'destroy'])->name('unavailabilities.destroy');
 });
 
 // Administration : administrateur uniquement (RG-03 ; middleware + Policies).
