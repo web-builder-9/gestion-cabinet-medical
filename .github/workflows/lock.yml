@@ -17,7 +17,7 @@ jobs:
           php-version: '8.3'
           tools: composer:v2
           coverage: none
-      - run: composer update --no-interaction --no-progress --no-install
+      - run: composer update --no-interaction --no-progress --no-install --no-scripts
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
