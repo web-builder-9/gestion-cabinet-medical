@@ -3,11 +3,16 @@
 namespace Tests\Feature\Patients;
 
 use App\Enums\Gender;
+use App\Enums\Role;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
+/**
+ * BF-12 : création et modification d'un dossier patient ; RG-05 (téléphone unique).
+ */
 class PatientFormTest extends TestCase
 {
     use RefreshDatabase;
@@ -22,8 +27,6 @@ class PatientFormTest extends TestCase
     }
 
     /**
-     * Données valides, à surcharger dans chaque test.
-     *
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
@@ -38,6 +41,7 @@ class PatientFormTest extends TestCase
             'phone' => '22123456',
             'email' => 'amira@example.com',
             'address' => '12, rue de Tunis, Midoun',
+            'data_consent' => '1',
         ], $overrides);
     }
 
@@ -47,10 +51,10 @@ class PatientFormTest extends TestCase
             ->get('/patients/create')
             ->assertOk()
             ->assertSee('Nouveau patient')
-            ->assertSee('Date de naissance');
+            ->assertSee('loi organique n° 2004-63');
     }
 
-    public function test_the_secretary_can_add_a_patient_with_an_empty_medical_record(): void
+    public function test_the_secretary_creates_an_account_a_patient_file_and_an_empty_medical_record(): void
     {
         $this->actingAs($this->secretary)
             ->post('/patients', $this->validData())
@@ -60,20 +64,48 @@ class PatientFormTest extends TestCase
         $patient = Patient::where('cin', '01234567')->firstOrFail();
 
         $this->assertSame('Amira Trabelsi', $patient->full_name);
+        $this->assertSame(Role::Patient, $patient->user->role);
+        $this->assertSame('22 123 456', $patient->user->phone);
         $this->assertSame(Gender::Female, $patient->gender);
+        $this->assertTrue($patient->data_consent);
+        $this->assertNotNull($patient->consent_given_at);
         $this->assertNotNull($patient->medicalRecord, 'Le dossier médical doit être créé avec la fiche.');
-        $this->assertNull($patient->medicalRecord->allergies);
+
+        // Personne ne connaît le mot de passe aléatoire : pas d'accès en ligne tant qu'il n'est pas choisi.
+        Auth::logout();
+        $this->assertFalse(Auth::attempt(['email' => 'amira@example.com', 'password' => 'password']));
+    }
+
+    public function test_the_patient_consent_is_required(): void
+    {
+        $this->actingAs($this->secretary)
+            ->post('/patients', $this->validData(['data_consent' => null]))
+            ->assertSessionHasErrors(['data_consent' => 'L\'accord du patient pour le traitement de ses données est obligatoire.']);
+
+        $this->assertSame(0, Patient::count());
     }
 
     public function test_the_phone_number_is_stored_in_a_single_format(): void
     {
-        foreach (['22123456', '22 12 34 56', '+216 22 123 456', '22-123-456'] as $i => $typed) {
+        foreach (['22 12 34 56', '+216 23 123 456', '24-123-456'] as $i => $typed) {
             $this->actingAs($this->secretary)
-                ->post('/patients', $this->validData(['cin' => "0000000{$i}", 'phone' => $typed]))
+                ->post('/patients', $this->validData(['cin' => "0000000{$i}", 'email' => "p{$i}@example.com", 'phone' => $typed]))
                 ->assertSessionHasNoErrors();
-
-            $this->assertSame('22 123 456', Patient::where('cin', "0000000{$i}")->value('phone'), "Saisie : {$typed}");
         }
+
+        $this->assertEqualsCanonicalizing(
+            ['22 123 456', '23 123 456', '24 123 456'],
+            User::withRole(Role::Patient)->pluck('phone')->all()
+        );
+    }
+
+    public function test_a_phone_number_cannot_belong_to_two_patients(): void
+    {
+        Patient::factory()->withUser(['phone' => '22 123 456'])->create();
+
+        $this->actingAs($this->secretary)
+            ->post('/patients', $this->validData())
+            ->assertSessionHasErrors(['phone' => 'Ce numéro appartient déjà à un autre patient : vérifiez qu\'il n\'a pas déjà un dossier.']);
     }
 
     public function test_required_fields_are_checked_in_french(): void
@@ -117,18 +149,21 @@ class PatientFormTest extends TestCase
             ->assertSessionHasErrors(['cin' => 'La valeur du champ CIN est déjà utilisée.']);
     }
 
-    public function test_the_cin_is_optional(): void
+    public function test_cin_and_email_are_optional(): void
     {
         $this->actingAs($this->secretary)
-            ->post('/patients', $this->validData(['cin' => '']))
+            ->post('/patients', $this->validData(['cin' => '', 'email' => '']))
             ->assertSessionHasNoErrors();
 
-        $this->assertNull(Patient::firstOrFail()->cin);
+        $patient = Patient::firstOrFail();
+        $this->assertNull($patient->cin);
+        $this->assertNull($patient->user->email);
+        $this->assertFalse($patient->hasPortalAccess());
     }
 
-    public function test_a_patient_can_be_updated_and_keeps_their_own_cin(): void
+    public function test_a_patient_can_be_updated_and_keeps_their_own_phone_and_cin(): void
     {
-        $patient = Patient::factory()->create(['cin' => '01234567']);
+        $patient = Patient::factory()->withUser(['phone' => '22 123 456', 'email' => 'amira@example.com'])->create(['cin' => '01234567']);
 
         $this->actingAs($this->secretary)
             ->get("/patients/{$patient->id}/edit")
@@ -136,20 +171,21 @@ class PatientFormTest extends TestCase
             ->assertSee('01234567');
 
         $this->actingAs($this->secretary)
-            ->put("/patients/{$patient->id}", $this->validData(['first_name' => 'Amina']))
+            ->put("/patients/{$patient->id}", $this->validData(['first_name' => 'Amina', 'data_consent' => null]))
             ->assertSessionHasNoErrors()
-            ->assertRedirect();
+            ->assertRedirect(route('patients.show', $patient));
 
-        $this->assertSame('Amina', $patient->fresh()->first_name);
+        $this->assertSame('Amina', $patient->user->fresh()->first_name);
     }
 
-    public function test_a_patient_account_cannot_create_or_edit_patients(): void
+    public function test_a_patient_or_an_admin_cannot_create_or_edit_patient_files(): void
     {
-        $patientUser = User::factory()->patient()->create();
         $patient = Patient::factory()->create();
 
-        $this->actingAs($patientUser)->get('/patients/create')->assertForbidden();
-        $this->actingAs($patientUser)->post('/patients', $this->validData())->assertForbidden();
-        $this->actingAs($patientUser)->put("/patients/{$patient->id}", $this->validData())->assertForbidden();
+        foreach ([User::factory()->patient()->create(), User::factory()->admin()->create()] as $user) {
+            $this->actingAs($user)->get('/patients/create')->assertForbidden();
+            $this->actingAs($user)->post('/patients', $this->validData())->assertForbidden();
+            $this->actingAs($user)->put("/patients/{$patient->id}", $this->validData())->assertForbidden();
+        }
     }
 }

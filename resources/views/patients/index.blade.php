@@ -48,7 +48,7 @@
                             <tr>
                                 <td class="px-6 py-4 font-medium">
                                     <a href="{{ route('patients.show', $patient) }}" class="text-gray-900 hover:text-indigo-700 hover:underline">
-                                        {{ $patient->last_name }} {{ $patient->first_name }}
+                                        {{ $patient->user->last_name }} {{ $patient->user->first_name }}
                                     </a>
                                 </td>
                                 <td class="px-6 py-4 text-gray-600">{{ $patient->cin ?? '—' }}</td>
@@ -56,7 +56,7 @@
                                     {{ $patient->birth_date->format('d/m/Y') }}
                                     <span class="text-gray-400">({{ $patient->age }} ans)</span>
                                 </td>
-                                <td class="px-6 py-4 text-gray-600">{{ $patient->phone }}</td>
+                                <td class="px-6 py-4 text-gray-600">{{ $patient->user->phone }}</td>
                                 <td class="px-6 py-4 text-right">
                                     @can('update', $patient)
                                         <a href="{{ route('patients.edit', $patient) }}" class="text-indigo-600 hover:text-indigo-800">Modifier</a>
