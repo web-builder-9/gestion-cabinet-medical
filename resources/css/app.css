@@ -6,26 +6,157 @@
 @source '../../storage/framework/views/*.php';
 @source '../views';
 
+/*
+  Charte graphique des maquettes Figma : police Inter, vert #0F766E,
+  fond #F4F7F7, bordures #E1E8EA. Chaque couleur devient une classe
+  Tailwind (bg-brand, text-muted, border-line…).
+*/
 @theme {
-    --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+    --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+
+    --color-brand: #0f766e;
+    --color-brand-dark: #115e59;
+    --color-brand-soft: #e3f2ef;
+
+    --color-ink: #0f2027;
+    --color-ink-2: #22343a;
+    --color-ink-3: #3d4f55;
+    --color-muted: #56676c;
+
+    --color-canvas: #f4f7f7;
+    --color-subtle: #f8fafa;
+    --color-hover: #f1f5f5;
+    --color-line: #e1e8ea;
+    --color-line-soft: #eef2f3;
+    --color-line-strong: #cbd6d9;
+
+    /* États des rendez-vous (pastilles) et messages */
+    --color-wait: #fdf1de;
+    --color-wait-ink: #92400e;
+    --color-ok: #e8f0fe;
+    --color-ok-ink: #1d4ed8;
+    --color-done: #e5f5ea;
+    --color-done-ink: #166534;
+    --color-danger: #fde8e8;
+    --color-danger-ink: #991b1b;
+    --color-neutral: #eef2f3;
+    --color-neutral-ink: #3d4f55;
 }
 
-/*
-  Compatibilité Tailwind 3 → 4 pour les vues de Breeze :
-  la couleur de bordure par défaut et le curseur des boutons ont changé en v4.
-*/
 @layer base {
     *,
     ::after,
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentcolor);
+        border-color: var(--color-line);
+    }
+
+    body {
+        @apply bg-canvas text-ink;
     }
 
     button:not(:disabled),
     [role='button']:not(:disabled) {
         cursor: pointer;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+/*
+  Composants réutilisés dans toutes les pages (équivalents des classes des maquettes).
+  Ils se combinent : class="btn btn-primary", class="alert alert-success", class="badge …".
+*/
+@layer components {
+    .btn {
+        @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-transparent px-4 text-sm font-semibold whitespace-nowrap transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply bg-brand text-white hover:bg-brand-dark;
+    }
+
+    .btn-secondary {
+        @apply border-line-strong bg-white text-ink-2 hover:bg-canvas hover:text-ink;
+    }
+
+    .btn-danger {
+        @apply border-danger bg-white text-danger-ink hover:bg-danger;
+    }
+
+    .btn-sm {
+        @apply h-9 px-3 text-[13px];
+    }
+
+    .card {
+        @apply rounded-xl border border-line bg-white;
+    }
+
+    .card-header {
+        @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4;
+    }
+
+    .card-title {
+        @apply text-base font-semibold text-ink;
+    }
+
+    /* Défilement horizontal des tableaux sur mobile ; « relative » contient aussi les libellés sr-only. */
+    .table-wrap {
+        @apply relative overflow-x-auto;
+    }
+
+    .table {
+        @apply w-full border-collapse text-sm;
+    }
+
+    .table th {
+        @apply border-b border-line bg-subtle px-4 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-muted uppercase;
+    }
+
+    .table td {
+        @apply border-b border-line-soft px-4 py-3 align-middle;
+    }
+
+    .badge {
+        @apply inline-flex h-[22px] items-center rounded-full px-2.5 text-xs font-semibold whitespace-nowrap;
+    }
+
+    .field {
+        @apply mt-1 block w-full rounded-lg border-line-strong text-sm text-ink shadow-none focus:border-brand focus:ring-brand;
+    }
+
+    .field-error {
+        @apply border-danger-ink bg-danger/40;
+    }
+
+    .label {
+        @apply block text-sm font-medium text-ink-2;
+    }
+
+    .avatar {
+        @apply inline-flex size-9 flex-none items-center justify-center rounded-full bg-brand-soft text-[13px] font-bold text-brand;
+    }
+
+    .link {
+        @apply font-medium text-brand underline-offset-2 hover:text-brand-dark hover:underline;
+    }
+
+    .alert {
+        @apply flex items-start gap-3 rounded-lg border px-4 py-3 text-sm;
+    }
+
+    .alert-success {
+        @apply border-done bg-done text-done-ink;
+    }
+
+    .alert-warning {
+        @apply border-wait bg-wait text-wait-ink;
+    }
+
+    .alert-danger {
+        @apply border-danger bg-danger text-danger-ink;
     }
 }

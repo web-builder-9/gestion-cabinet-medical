@@ -1,16 +1,14 @@
 @props(['status'])
 
-{{-- Pastille de couleur pour le statut d'un rendez-vous (App\Enums\AppointmentStatus). --}}
+{{-- Pastille de couleur d'un état de rendez-vous (mêmes couleurs que les maquettes). --}}
 @php
     $classes = match ($status) {
-        App\Enums\AppointmentStatus::Pending => 'bg-amber-50 text-amber-800',
-        App\Enums\AppointmentStatus::Confirmed => 'bg-blue-50 text-blue-700',
-        App\Enums\AppointmentStatus::Completed => 'bg-green-50 text-green-700',
-        App\Enums\AppointmentStatus::Cancelled => 'bg-red-50 text-red-700',
-        App\Enums\AppointmentStatus::NoShow => 'bg-gray-100 text-gray-700',
+        App\Enums\AppointmentStatus::Pending => 'bg-wait text-wait-ink',
+        App\Enums\AppointmentStatus::Confirmed => 'bg-ok text-ok-ink',
+        App\Enums\AppointmentStatus::Completed => 'bg-done text-done-ink',
+        App\Enums\AppointmentStatus::Cancelled => 'bg-danger text-danger-ink',
+        App\Enums\AppointmentStatus::NoShow => 'bg-neutral text-neutral-ink',
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {$classes}"]) }}>
-    {{ $status->label() }}
-</span>
+<span {{ $attributes->merge(['class' => "badge {$classes}"]) }}>{{ $status->label() }}</span>
