@@ -215,6 +215,7 @@ return [
         'reason' => 'motif',
         'status' => 'statut',
         'notes' => 'notes',
+        'time' => 'créneau',
         'specialty_id' => 'spécialité',
         'presentation' => 'présentation',
         'data_consent' => 'consentement',

@@ -32,7 +32,7 @@ class Navigation
      * Liens du menu principal. Un lien vers une page pas encore développée
      * (route absente) n'est pas affiché.
      *
-     * @return list<array{label: string, route: string, icon: string, active: string}>
+     * @return list<array{label: string, route: string, icon: string, active: string|list<string>}>
      */
     public static function items(User $user): array
     {
@@ -40,10 +40,10 @@ class Navigation
             Role::Secretary => [
                 ['Tableau de bord', 'dashboard', 'dashboard', 'dashboard'],
                 ['Patients', 'patients.index', 'users', 'patients.*'],
-                ['Rendez-vous', 'appointments.index', 'calendar', 'appointments.*'],
+                ['Rendez-vous', 'appointments.index', 'calendar', ['appointments.*', 'agenda']],
             ],
             Role::Doctor => [
-                ['Mon agenda', 'agenda', 'calendar', 'agenda'],
+                ['Mon agenda', 'agenda', 'calendar', ['agenda', 'appointments.*']],
                 ['Mes disponibilités', 'availabilities.index', 'clock', 'availabilities.*'],
                 ['Dossiers patients', 'patients.index', 'users', 'patients.*'],
                 ['Consultations', 'consultations.index', 'consultation', 'consultations.*'],

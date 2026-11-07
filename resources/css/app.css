@@ -178,6 +178,11 @@
         @apply bg-brand text-white hover:text-white;
     }
 
+    /* Périodes sans consultation dans l'agenda (hachures de la maquette 11). */
+    .hatched {
+        background-image: repeating-linear-gradient(135deg, var(--color-line-soft) 0 6px, var(--color-subtle) 6px 12px);
+    }
+
     /* Chiffre clé (activité du mois, tableau de bord). */
     .stat-value {
         @apply text-3xl font-bold text-ink tabular-nums;

@@ -1,5 +1,5 @@
 {{--
-    Liste de rendez-vous en lecture seule sur la fiche patient.
+    Liste de rendez-vous sur la fiche patient ; chacun mène à sa fiche (actions, historique).
     Variables : $appointments (collection), $empty (texte si la liste est vide).
 --}}
 @if ($appointments->isEmpty())
@@ -9,10 +9,10 @@
         @foreach ($appointments as $appointment)
             <li class="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm">
                 <div>
-                    <p class="font-semibold text-ink">
+                    <a href="{{ route('appointments.show', $appointment) }}" class="font-semibold text-ink hover:text-brand hover:underline">
                         {{ ucfirst($appointment->starts_at->translatedFormat('l j F Y')) }}
                         à {{ $appointment->starts_at->format('H:i') }}
-                    </p>
+                    </a>
                     <p class="text-muted">
                         {{ $appointment->reason ?? 'Sans motif' }} · {{ $appointment->doctor->display_name }}
                     </p>

@@ -3,6 +3,9 @@
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SpecialtyController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\AppointmentStatusController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
 use App\Http\Controllers\Doctor\UnavailabilityController;
@@ -23,8 +26,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
-// Patients : personnel du cabinet (middleware) ; chaque action vérifie en plus
-// la PatientPolicy (ex. : suppression réservée au médecin).
+// Patients et rendez-vous : médecin et secrétaire (middleware) ; chaque action vérifie
+// en plus sa Policy (ex. : archivage réservé au médecin, RG-17 pour les rendez-vous).
 Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     // Réservé au médecin (en plus des Policies). Déclaré AVANT la ressource :
     // sinon « /patients/archives » serait pris pour la fiche d'un patient.
@@ -42,6 +45,19 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     });
 
     Route::resource('patients', PatientController::class);
+
+    // Agenda (maquette 11) et rendez-vous (maquettes 7 et 10). « nouveau » est
+    // déclaré avant {appointment}, sinon il serait pris pour un numéro de rendez-vous.
+    Route::get('agenda', AgendaController::class)->name('agenda');
+    Route::get('rendez-vous', [AppointmentController::class, 'index'])->name('appointments.index');
+    Route::get('rendez-vous/nouveau', [AppointmentController::class, 'create'])->name('appointments.create');
+    Route::post('rendez-vous', [AppointmentController::class, 'store'])->name('appointments.store');
+    Route::get('rendez-vous/{appointment}', [AppointmentController::class, 'show'])->name('appointments.show');
+    Route::get('rendez-vous/{appointment}/deplacer', [AppointmentController::class, 'edit'])->name('appointments.edit');
+    Route::put('rendez-vous/{appointment}', [AppointmentController::class, 'update'])->name('appointments.update');
+    Route::patch('rendez-vous/{appointment}/confirmer', [AppointmentStatusController::class, 'confirm'])->name('appointments.confirm');
+    Route::patch('rendez-vous/{appointment}/annuler', [AppointmentStatusController::class, 'cancel'])->name('appointments.cancel');
+    Route::patch('rendez-vous/{appointment}/absent', [AppointmentStatusController::class, 'noShow'])->name('appointments.no-show');
 });
 
 // Disponibilités et indisponibilités : chaque médecin gère les siennes
