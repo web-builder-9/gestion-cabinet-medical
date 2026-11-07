@@ -35,9 +35,9 @@
                     <h3 class="text-lg font-medium text-gray-900">Identité</h3>
                     <dl class="mt-4 grid grid-cols-3 gap-x-4 gap-y-3 text-sm">
                         <dt class="text-gray-500">Nom</dt>
-                        <dd class="col-span-2 text-gray-900">{{ $patient->last_name }}</dd>
+                        <dd class="col-span-2 text-gray-900">{{ $patient->user->last_name }}</dd>
                         <dt class="text-gray-500">Prénom</dt>
-                        <dd class="col-span-2 text-gray-900">{{ $patient->first_name }}</dd>
+                        <dd class="col-span-2 text-gray-900">{{ $patient->user->first_name }}</dd>
                         <dt class="text-gray-500">Date de naissance</dt>
                         <dd class="col-span-2 text-gray-900">{{ $patient->birth_date->translatedFormat('j F Y') }}</dd>
                         <dt class="text-gray-500">CIN</dt>
@@ -49,9 +49,9 @@
                     <h3 class="text-lg font-medium text-gray-900">Coordonnées</h3>
                     <dl class="mt-4 grid grid-cols-3 gap-x-4 gap-y-3 text-sm">
                         <dt class="text-gray-500">Téléphone</dt>
-                        <dd class="col-span-2 text-gray-900">{{ $patient->phone }}</dd>
+                        <dd class="col-span-2 text-gray-900">{{ $patient->user->phone }}</dd>
                         <dt class="text-gray-500">Adresse e-mail</dt>
-                        <dd class="col-span-2 text-gray-900">{{ $patient->email ?? '—' }}</dd>
+                        <dd class="col-span-2 text-gray-900">{{ $patient->user->email ?? '—' }}</dd>
                         <dt class="text-gray-500">Adresse</dt>
                         <dd class="col-span-2 text-gray-900">{{ $patient->address ?? '—' }}</dd>
                     </dl>

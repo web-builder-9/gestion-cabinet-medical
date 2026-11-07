@@ -11,10 +11,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['first_name', 'last_name', 'cin', 'birth_date', 'gender', 'phone', 'email', 'address'])]
+/**
+ * Classe « Patient » : spécialise Utilisateur. L'identité commune (nom, prénom,
+ * e-mail, téléphone) est dans users ; ici, les attributs propres au patient.
+ */
+#[Fillable(['cin', 'birth_date', 'gender', 'address', 'data_consent', 'consent_given_at'])]
 class Patient extends Model
 {
     /** @use HasFactory<PatientFactory> */
@@ -25,50 +30,9 @@ class Patient extends Model
         return [
             'birth_date' => 'date',
             'gender' => Gender::class,
+            'data_consent' => 'boolean',
+            'consent_given_at' => 'datetime',
         ];
-    }
-
-    /**
-     * « Prénom Nom », utilisable comme $patient->full_name.
-     */
-    protected function fullName(): Attribute
-    {
-        return Attribute::get(fn () => "{$this->first_name} {$this->last_name}");
-    }
-
-    /**
-     * Le téléphone est toujours enregistré au format « 22 123 456 »,
-     * quelle que soit la saisie (« 22123456 », « +216 22 12 34 56 »…).
-     */
-    protected function phone(): Attribute
-    {
-        return Attribute::set(fn (?string $value) => self::formatPhone($value));
-    }
-
-    public static function formatPhone(?string $value): ?string
-    {
-        $digits = preg_replace('/\D/', '', (string) $value);
-
-        // Indicatif tunisien facultatif : +216 ou 00216.
-        if (strlen($digits) === 11 && str_starts_with($digits, '216')) {
-            $digits = substr($digits, 3);
-        } elseif (strlen($digits) === 13 && str_starts_with($digits, '00216')) {
-            $digits = substr($digits, 5);
-        }
-
-        if (strlen($digits) !== 8) {
-            return $value; // format inattendu : on ne touche à rien (la validation l'aura refusé)
-        }
-
-        return substr($digits, 0, 2).' '.substr($digits, 2, 3).' '.substr($digits, 5, 3);
-    }
-
-    /**
-     * Âge en années, calculé à partir de la date de naissance.
-     */
-    protected function age(): Attribute
-    {
-        return Attribute::get(fn () => $this->birth_date?->age);
     }
 
     /**
@@ -96,7 +60,38 @@ class Patient extends Model
     }
 
     /**
-     * Recherche par nom, prénom, CIN ou téléphone.
+     * Consultations du patient, à travers ses rendez-vous.
+     *
+     * @return HasManyThrough<Consultation, Appointment, $this>
+     */
+    public function consultations(): HasManyThrough
+    {
+        return $this->hasManyThrough(Consultation::class, Appointment::class);
+    }
+
+    protected function fullName(): Attribute
+    {
+        return Attribute::get(fn () => $this->user->full_name);
+    }
+
+    /**
+     * Âge en années, calculé à partir de la date de naissance.
+     */
+    protected function age(): Attribute
+    {
+        return Attribute::get(fn () => $this->birth_date?->age);
+    }
+
+    /**
+     * Le patient peut-il se connecter à son espace (compte actif avec e-mail) ?
+     */
+    public function hasPortalAccess(): bool
+    {
+        return $this->user->email !== null && $this->user->is_active;
+    }
+
+    /**
+     * Recherche par nom, prénom, téléphone (dans users) ou CIN.
      * Exemple : Patient::search('Trabelsi')->get();
      *
      * @param  Builder<Patient>  $query
@@ -112,10 +107,26 @@ class Patient extends Model
         $like = '%'.$term.'%';
 
         $query->where(function (Builder $q) use ($like) {
-            $q->where('first_name', 'like', $like)
-                ->orWhere('last_name', 'like', $like)
-                ->orWhere('cin', 'like', $like)
-                ->orWhere('phone', 'like', $like);
+            $q->where('cin', 'like', $like)
+                ->orWhereHas('user', function (Builder $user) use ($like) {
+                    $user->where('first_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhere('phone', 'like', $like);
+                });
         });
+    }
+
+    /**
+     * Tri alphabétique par nom puis prénom (colonnes de users).
+     *
+     * @param  Builder<Patient>  $query
+     */
+    public function scopeOrderByName(Builder $query): void
+    {
+        $query->orderBy(
+            User::select('last_name')->whereColumn('users.id', 'patients.user_id')
+        )->orderBy(
+            User::select('first_name')->whereColumn('users.id', 'patients.user_id')
+        );
     }
 }

@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
+use App\Models\Doctor;
 use App\Models\Patient;
-use App\Models\User;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,9 +15,10 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class AppointmentFactory extends Factory
 {
-    private const REASONS = [
+    public const REASONS = [
         'Consultation générale', 'Contrôle', "Renouvellement d'ordonnance", 'Fièvre',
         'Douleurs abdominales', 'Certificat médical', 'Vaccination', 'Suivi tension artérielle',
+        'Toux persistante', 'Bilan annuel',
     ];
 
     /**
@@ -30,7 +31,7 @@ class AppointmentFactory extends Factory
 
         return [
             'patient_id' => Patient::factory(),
-            'doctor_id' => User::factory()->doctor(),
+            'doctor_id' => Doctor::factory(),
             'starts_at' => $start,
             'ends_at' => $start->addMinutes(30),
             'reason' => fake()->randomElement(self::REASONS),
@@ -53,9 +54,9 @@ class AppointmentFactory extends Factory
         ]);
     }
 
-    public function scheduled(): static
+    public function pending(): static
     {
-        return $this->state(fn (array $attributes) => ['status' => AppointmentStatus::Scheduled]);
+        return $this->state(fn (array $attributes) => ['status' => AppointmentStatus::Pending]);
     }
 
     public function confirmed(): static
@@ -73,15 +74,24 @@ class AppointmentFactory extends Factory
         return $this->state(fn (array $attributes) => ['status' => AppointmentStatus::Completed]);
     }
 
+    public function noShow(): static
+    {
+        return $this->state(fn (array $attributes) => ['status' => AppointmentStatus::NoShow]);
+    }
+
     /**
-     * Passé : surtout terminé, parfois annulé. Futur : prévu ou confirmé.
+     * Passé : surtout terminé, parfois annulé ou absent. Futur : en attente ou confirmé.
      */
-    private static function plausibleStatus(CarbonImmutable $start): AppointmentStatus
+    public static function plausibleStatus(CarbonImmutable $start): AppointmentStatus
     {
         if ($start->isPast()) {
-            return fake()->boolean(85) ? AppointmentStatus::Completed : AppointmentStatus::Cancelled;
+            return fake()->randomElement([
+                ...array_fill(0, 8, AppointmentStatus::Completed),
+                AppointmentStatus::Cancelled,
+                AppointmentStatus::NoShow,
+            ]);
         }
 
-        return fake()->boolean(60) ? AppointmentStatus::Confirmed : AppointmentStatus::Scheduled;
+        return fake()->boolean(70) ? AppointmentStatus::Confirmed : AppointmentStatus::Pending;
     }
 }

@@ -28,10 +28,9 @@ class PatientArchiveTest extends TestCase
 
         $this->doctor = User::factory()->doctor()->create();
         $this->secretary = User::factory()->secretary()->create();
-        $this->patient = Patient::factory()->withMedicalRecord()->create([
-            'first_name' => 'Amira',
-            'last_name' => 'Trabelsi',
-        ]);
+        $this->patient = Patient::factory()->withMedicalRecord()
+            ->withUser(['first_name' => 'Amira', 'last_name' => 'Trabelsi'])
+            ->create();
     }
 
     public function test_the_doctor_can_archive_a_patient(): void
@@ -44,6 +43,7 @@ class PatientArchiveTest extends TestCase
             ->assertSessionHas('status');
 
         $this->assertSoftDeleted($this->patient);
+        $this->assertFalse($this->patient->user->fresh()->is_active, 'L\'accès en ligne est coupé (RG-02).');
         $this->assertDatabaseHas('appointments', ['id' => $appointment->id]);
         $this->assertDatabaseHas('medical_records', ['patient_id' => $this->patient->id]);
 
@@ -81,6 +81,7 @@ class PatientArchiveTest extends TestCase
             ->assertRedirect(route('patients.show', $this->patient));
 
         $this->assertNotSoftDeleted($this->patient);
+        $this->assertTrue($this->patient->user->fresh()->is_active);
         $this->actingAs($this->doctor)->get('/patients')->assertSee('Trabelsi Amira');
     }
 

@@ -6,8 +6,8 @@ use App\Models\MedicalRecord;
 use App\Models\User;
 
 /**
- * Dossier médical : données de santé, accessibles au médecin uniquement
- * (ni la secrétaire, ni le patient via l'application).
+ * Dossier médical : données de santé, réservées aux médecins du cabinet (RG-21).
+ * Ni la secrétaire, ni l'administrateur n'y ont accès.
  */
 class MedicalRecordPolicy
 {

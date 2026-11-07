@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Gender;
+use App\Enums\Role;
 use App\Http\Requests\PatientRequest;
 use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -30,9 +33,9 @@ class PatientController extends Controller
         $search = trim((string) $request->query('q'));
 
         $patients = Patient::query()
+            ->with('user')
             ->search($search)
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->orderByName()
             ->paginate(self::PER_PAGE)
             ->withQueryString(); // garde ?q=... dans les liens de pagination
 
@@ -47,17 +50,27 @@ class PatientController extends Controller
         Gate::authorize('create', Patient::class);
 
         return view('patients.create', [
-            'patient' => new Patient,
+            'patient' => (new Patient)->setRelation('user', new User),
             'genders' => Gender::cases(),
         ]);
     }
 
     public function store(PatientRequest $request): RedirectResponse
     {
-        // La fiche et son dossier médical (vide) sont créés ensemble :
-        // si l'un échoue, rien n'est enregistré (transaction).
+        // Le compte (users), le dossier (patients) et le dossier médical vide sont
+        // créés ensemble : si l'un échoue, rien n'est enregistré (transaction).
         $patient = DB::transaction(function () use ($request) {
-            $patient = Patient::create($request->validated());
+            $account = new User($request->accountData());
+            $account->role = Role::Patient;
+            // Mot de passe aléatoire : le patient choisira le sien s'il obtient un accès en ligne.
+            $account->password = Str::password(32);
+            $account->save();
+
+            $patient = $account->patient()->create([
+                ...$request->patientData(),
+                'data_consent' => true,
+                'consent_given_at' => now(),
+            ]);
             $patient->medicalRecord()->create();
 
             return $patient;
@@ -71,16 +84,18 @@ class PatientController extends Controller
     {
         Gate::authorize('view', $patient);
 
+        $patient->load('user');
+
         // Rendez-vous en lecture seule (leur gestion viendra avec le module Rendez-vous).
         return view('patients.show', [
             'patient' => $patient,
             // Affiché seulement si la MedicalRecordPolicy l'autorise (@can dans la vue).
             'record' => $patient->medicalRecord ?? $patient->medicalRecord()->make(),
-            'upcoming' => $patient->appointments()->with('doctor')
+            'upcoming' => $patient->appointments()->with('doctor.user')
                 ->where('starts_at', '>=', now())
                 ->orderBy('starts_at')
                 ->get(),
-            'past' => $patient->appointments()->with('doctor')
+            'past' => $patient->appointments()->with('doctor.user')
                 ->where('starts_at', '<', now())
                 ->orderByDesc('starts_at')
                 ->limit(self::PAST_APPOINTMENTS)
@@ -93,14 +108,17 @@ class PatientController extends Controller
         Gate::authorize('update', $patient);
 
         return view('patients.edit', [
-            'patient' => $patient,
+            'patient' => $patient->load('user'),
             'genders' => Gender::cases(),
         ]);
     }
 
     public function update(PatientRequest $request, Patient $patient): RedirectResponse
     {
-        $patient->update($request->validated());
+        DB::transaction(function () use ($request, $patient) {
+            $patient->user->update($request->accountData());
+            $patient->update($request->patientData());
+        });
 
         return redirect()->route('patients.show', $patient)
             ->with('status', "La fiche de {$patient->full_name} a été modifiée.");
@@ -114,7 +132,11 @@ class PatientController extends Controller
     {
         Gate::authorize('delete', $patient);
 
-        $patient->delete();
+        // Archivage (RG-22) : la fiche est masquée et l'accès en ligne coupé (RG-02).
+        DB::transaction(function () use ($patient) {
+            $patient->delete();
+            $patient->user->forceFill(['is_active' => false])->save();
+        });
 
         return redirect()->route('patients.index')
             ->with('status', "{$patient->full_name} a été archivé(e). Le médecin peut restaurer la fiche depuis les archives.");
@@ -125,7 +147,7 @@ class PatientController extends Controller
         Gate::authorize('viewArchived', Patient::class);
 
         return view('patients.archived', [
-            'patients' => Patient::onlyTrashed()->orderByDesc('deleted_at')->paginate(self::PER_PAGE),
+            'patients' => Patient::onlyTrashed()->with('user')->orderByDesc('deleted_at')->paginate(self::PER_PAGE),
         ]);
     }
 
@@ -133,7 +155,10 @@ class PatientController extends Controller
     {
         Gate::authorize('restore', $patient);
 
-        $patient->restore();
+        DB::transaction(function () use ($patient) {
+            $patient->restore();
+            $patient->user->forceFill(['is_active' => true])->save();
+        });
 
         return redirect()->route('patients.show', $patient)
             ->with('status', "La fiche de {$patient->full_name} a été restaurée.");

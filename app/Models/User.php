@@ -2,24 +2,26 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role;
+use App\Support\PhoneNumber;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 /**
- * « role » n'est volontairement PAS dans Fillable : un formulaire ne doit
- * jamais pouvoir changer le rôle d'un compte par affectation de masse.
- * On l'affecte explicitement : $user->role = Role::Secretary;
+ * Classe « Utilisateur » : attributs communs à tous les rôles.
+ * Patient et Médecin la spécialisent (modèles Patient et Doctor, liés en 1-1).
+ *
+ * « role » et « is_active » ne sont volontairement PAS dans Fillable : un
+ * formulaire ne doit jamais pouvoir les changer par affectation de masse.
  */
-#[Fillable(['name', 'email', 'phone', 'password'])]
+#[Fillable(['last_name', 'first_name', 'email', 'phone', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -27,18 +29,16 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * Valeurs par défaut (identiques à celles de la migration), pour que
-     * $user->role soit renseigné même avant relecture en base.
+     * Valeurs par défaut (identiques à la migration), disponibles avant relecture en base.
      *
      * @var array<string, mixed>
      */
     protected $attributes = [
         'role' => 'patient',
+        'is_active' => true,
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
@@ -47,12 +47,44 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * « Prénom Nom ».
+     */
+    protected function fullName(): Attribute
+    {
+        return Attribute::get(fn () => trim("{$this->first_name} {$this->last_name}"));
+    }
+
+    /**
+     * Initiales affichées dans les pastilles (« AB » pour Amira Ben Salah).
+     */
+    protected function initials(): Attribute
+    {
+        return Attribute::get(fn () => mb_strtoupper(
+            mb_substr((string) $this->first_name, 0, 1).mb_substr((string) $this->last_name, 0, 1)
+        ));
+    }
+
+    /**
+     * Téléphone toujours enregistré au format « 22 123 456 ».
+     */
+    protected function phone(): Attribute
+    {
+        return Attribute::set(fn (?string $value) => PhoneNumber::format($value));
     }
 
     public function hasRole(Role ...$roles): bool
     {
         return in_array($this->role, $roles, true);
+    }
+
+    public function isPatient(): bool
+    {
+        return $this->role === Role::Patient;
     }
 
     public function isDoctor(): bool
@@ -65,21 +97,21 @@ class User extends Authenticatable
         return $this->role === Role::Secretary;
     }
 
-    public function isPatient(): bool
+    public function isAdmin(): bool
     {
-        return $this->role === Role::Patient;
+        return $this->role === Role::Admin;
     }
 
     /**
-     * Personnel du cabinet : médecin ou secrétaire.
+     * Personnel soignant et administratif qui gère les patients : médecin ou secrétaire.
      */
-    public function isStaff(): bool
+    public function isCareStaff(): bool
     {
         return $this->hasRole(Role::Doctor, Role::Secretary);
     }
 
     /**
-     * Fiche patient liée à ce compte (uniquement pour le rôle patient).
+     * Profil patient (spécialisation de l'utilisateur).
      *
      * @return HasOne<Patient, $this>
      */
@@ -89,30 +121,38 @@ class User extends Authenticatable
     }
 
     /**
-     * Rendez-vous dont cet utilisateur est le médecin.
+     * Profil médecin (spécialisation de l'utilisateur).
      *
-     * @return HasMany<Appointment, $this>
+     * @return HasOne<Doctor, $this>
      */
-    public function appointmentsAsDoctor(): HasMany
+    public function doctor(): HasOne
     {
-        return $this->hasMany(Appointment::class, 'doctor_id');
+        return $this->hasOne(Doctor::class);
     }
 
     /**
      * @param  Builder<User>  $query
      */
-    public function scopeDoctors(Builder $query): void
+    public function scopeWithRole(Builder $query, Role ...$roles): void
     {
-        $query->where('role', Role::Doctor->value);
+        $query->whereIn('role', array_map(fn (Role $role) => $role->value, $roles));
     }
 
     /**
-     * Comptes du personnel du cabinet (médecins et secrétaires).
+     * Comptes du personnel (médecins, secrétaires, administrateurs).
      *
      * @param  Builder<User>  $query
      */
     public function scopeStaff(Builder $query): void
     {
-        $query->whereIn('role', [Role::Doctor->value, Role::Secretary->value]);
+        $query->withRole(...Role::staff());
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     */
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('is_active', true);
     }
 }

@@ -5,16 +5,17 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Http\Requests\StoreStaffRequest;
 use App\Http\Requests\UpdateStaffRequest;
+use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
- * Gestion des comptes du personnel (médecins, secrétaires) par le médecin.
- *
- * Double protection : le middleware « role:doctor » sur les routes, et les
- * Policies (UserPolicy) dans chaque action ou FormRequest.
+ * Comptes du personnel (médecins, secrétaires, administrateurs), gérés par
+ * l'administrateur. Double protection : middleware « role:admin » sur les
+ * routes, et UserPolicy dans chaque action ou FormRequest.
  */
 class StaffController extends Controller
 {
@@ -23,7 +24,8 @@ class StaffController extends Controller
         Gate::authorize('viewAny', User::class);
 
         return view('staff.index', [
-            'members' => User::query()->staff()->orderBy('name')->get(),
+            'members' => User::query()->staff()->with('doctor.specialty')
+                ->orderBy('last_name')->orderBy('first_name')->get(),
         ]);
     }
 
@@ -31,21 +33,31 @@ class StaffController extends Controller
     {
         Gate::authorize('create', User::class);
 
+        $member = new User;
+        $member->role = Role::Secretary; // rôle proposé par défaut
+
         return view('staff.create', [
-            'member' => new User,
-            'roles' => self::staffRoles(),
+            'member' => $member,
+            'roles' => Role::staff(),
+            'specialties' => Specialty::orderBy('name')->get(),
         ]);
     }
 
     public function store(StoreStaffRequest $request): RedirectResponse
     {
-        $member = new User($request->safe()->only(['name', 'email', 'phone', 'password']));
-        // Le rôle n'est pas « fillable » : on l'affecte explicitement, après validation.
-        $member->role = $request->enum('role', Role::class);
-        $member->save();
+        $member = DB::transaction(function () use ($request) {
+            $member = new User($request->safe()->only(['last_name', 'first_name', 'email', 'phone', 'password']));
+            // Le rôle n'est pas « fillable » : on l'affecte explicitement, après validation.
+            $member->role = $request->enum('role', Role::class);
+            $member->save();
+
+            $this->syncDoctorProfile($member, $request->integer('specialty_id'));
+
+            return $member;
+        });
 
         return redirect()->route('staff.index')
-            ->with('status', "Le compte de {$member->name} a été créé.");
+            ->with('status', "Le compte de {$member->full_name} a été créé.");
     }
 
     public function edit(User $user): View
@@ -53,36 +65,41 @@ class StaffController extends Controller
         Gate::authorize('update', $user);
 
         return view('staff.edit', [
-            'member' => $user,
-            'roles' => self::staffRoles(),
+            'member' => $user->load('doctor'),
+            'roles' => Role::staff(),
+            'specialties' => Specialty::orderBy('name')->get(),
         ]);
     }
 
     public function update(UpdateStaffRequest $request, User $user): RedirectResponse
     {
-        $user->fill($request->safe()->only(['name', 'email', 'phone']));
+        DB::transaction(function () use ($request, $user) {
+            $user->fill($request->safe()->only(['last_name', 'first_name', 'email', 'phone']));
 
-        if ($request->filled('password')) {
-            $user->password = $request->validated('password');
-        }
+            if ($request->filled('password')) {
+                $user->password = $request->validated('password');
+            }
 
-        if ($request->user()->can('updateRole', $user)) {
-            $user->role = $request->enum('role', Role::class);
-        }
+            if ($request->user()->can('updateRole', $user)) {
+                $user->role = $request->enum('role', Role::class);
+            }
 
-        $user->save();
+            $user->save();
+            $this->syncDoctorProfile($user, $request->integer('specialty_id'));
+        });
 
         return redirect()->route('staff.index')
-            ->with('status', "Le compte de {$user->name} a été modifié.");
+            ->with('status', "Le compte de {$user->full_name} a été modifié.");
     }
 
     /**
-     * Rôles proposés dans le formulaire (secrétaire en premier : cas le plus courant).
-     *
-     * @return list<Role>
+     * Un médecin a un profil (table doctors) avec sa spécialité (RG-06).
+     * Si le compte cesse d'être médecin, le profil est gardé : ses rendez-vous y sont liés.
      */
-    private static function staffRoles(): array
+    private function syncDoctorProfile(User $user, int $specialtyId): void
     {
-        return [Role::Secretary, Role::Doctor];
+        if ($user->isDoctor()) {
+            $user->doctor()->updateOrCreate([], ['specialty_id' => $specialtyId]);
+        }
     }
 }

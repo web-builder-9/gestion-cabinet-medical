@@ -9,7 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xs sm:rounded-lg">
                 <div class="p-6 text-gray-900 space-y-2">
-                    <p class="text-lg font-medium">Bonjour {{ Auth::user()->name }}</p>
+                    <p class="text-lg font-medium">Bonjour {{ Auth::user()->first_name }}</p>
                     <p class="text-sm text-gray-500">{{ ucfirst(now()->translatedFormat('l j F Y')) }}</p>
 
                     {{-- Le contenu dépend des droits (Policies), pas d'un test direct du rôle. --}}

@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Dossier médical : relation 1-1 avec patients (patient_id unique).
-     * Accès réservé au médecin (contrôlé par une Policy).
+     * Classe « DossierMedical » : composition avec Patient (0..1 par patient).
+     * Accès réservé aux médecins (RG-21).
      */
     public function up(): void
     {
@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('patient_id')->unique()->constrained()->cascadeOnDelete();
             $table->string('blood_type', 3)->nullable();
             $table->text('allergies')->nullable();
-            $table->text('medical_history')->nullable();
+            $table->text('medical_history')->nullable(); // antécédents
             $table->text('current_treatments')->nullable();
             $table->timestamps();
         });

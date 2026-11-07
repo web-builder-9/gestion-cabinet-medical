@@ -15,13 +15,9 @@ class PatientShowTest extends TestCase
 
     public function test_the_staff_sees_the_identity_and_contact_details(): void
     {
-        $patient = Patient::factory()->create([
-            'first_name' => 'Amira',
-            'last_name' => 'Trabelsi',
-            'birth_date' => '1990-05-14',
-            'phone' => '22 123 456',
-            'cin' => '01234567',
-        ]);
+        $patient = Patient::factory()
+            ->withUser(['first_name' => 'Amira', 'last_name' => 'Trabelsi', 'phone' => '22 123 456'])
+            ->create(['birth_date' => '1990-05-14', 'cin' => '01234567']);
 
         $this->actingAs(User::factory()->secretary()->create())
             ->get("/patients/{$patient->id}")
@@ -35,7 +31,8 @@ class PatientShowTest extends TestCase
     public function test_upcoming_and_past_appointments_are_listed(): void
     {
         $patient = Patient::factory()->create();
-        $doctor = User::factory()->doctor()->create(['name' => 'Dr Ben Salah']);
+        $doctorUser = User::factory()->doctor()->create(['first_name' => 'Salma', 'last_name' => 'Ben Ali']);
+        $doctor = $doctorUser->doctor;
 
         Appointment::factory()
             ->at(CarbonImmutable::now()->addDays(3)->setTime(10, 30))
@@ -47,12 +44,12 @@ class PatientShowTest extends TestCase
             ->completed()
             ->create(['patient_id' => $patient->id, 'doctor_id' => $doctor->id, 'reason' => 'Fièvre']);
 
-        $this->actingAs($doctor)
+        $this->actingAs($doctorUser)
             ->get("/patients/{$patient->id}")
             ->assertOk()
             ->assertSeeInOrder(['Rendez-vous à venir', 'Contrôle annuel', 'Confirmé', 'Derniers rendez-vous', 'Fièvre', 'Terminé'])
             ->assertSee('à 10:30')
-            ->assertSee('Dr Ben Salah');
+            ->assertSee('Dr Salma Ben Ali');
     }
 
     public function test_a_patient_without_appointments_shows_empty_messages(): void
@@ -83,6 +80,7 @@ class PatientShowTest extends TestCase
                 'birth_date' => '1985-01-01',
                 'gender' => 'M',
                 'phone' => '55666777',
+                'data_consent' => '1',
             ])
             ->assertRedirect(route('patients.show', Patient::firstOrFail()));
     }

@@ -14,7 +14,7 @@
                         à {{ $appointment->starts_at->format('H:i') }}
                     </p>
                     <p class="text-gray-500">
-                        {{ $appointment->reason ?? 'Sans motif' }} · {{ $appointment->doctor->name }}
+                        {{ $appointment->reason ?? 'Sans motif' }} · {{ $appointment->doctor->display_name }}
                     </p>
                 </div>
                 <x-appointment-status :status="$appointment->status" />

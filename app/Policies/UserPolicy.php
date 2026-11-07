@@ -5,32 +5,29 @@ namespace App\Policies;
 use App\Models\User;
 
 /**
- * Gestion des comptes du personnel : réservée au médecin.
+ * Comptes du personnel : gérés par l'administrateur uniquement (RG-03, BF-23, BF-24).
+ * Les comptes patients sont créés par le patient lui-même ou par la secrétaire.
  */
 class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isDoctor();
+        return $user->isAdmin();
     }
 
     public function create(User $user): bool
     {
-        return $user->isDoctor();
+        return $user->isAdmin();
     }
 
-    /**
-     * Le médecin modifie les comptes du personnel. Les comptes patients
-     * seront gérés avec l'espace patient, pas ici.
-     */
     public function update(User $user, User $account): bool
     {
-        return $user->isDoctor() && $account->isStaff();
+        return $user->isAdmin() && ! $account->isPatient();
     }
 
     /**
-     * Personne ne change son propre rôle : le seul médecin du cabinet
-     * pourrait sinon se retirer ses droits et ne plus pouvoir les récupérer.
+     * Personne ne change son propre rôle : le seul administrateur pourrait
+     * sinon se retirer ses droits et ne plus pouvoir les récupérer.
      */
     public function updateRole(User $user, User $account): bool
     {
@@ -38,8 +35,7 @@ class UserPolicy
     }
 
     /**
-     * Pas de suppression de compte : les rendez-vous et consultations
-     * doivent garder leur médecin.
+     * RG-22 : aucune suppression de compte ; on le désactive.
      */
     public function delete(User $user, User $account): bool
     {

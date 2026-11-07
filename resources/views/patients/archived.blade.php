@@ -23,7 +23,7 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($patients as $patient)
                             <tr>
-                                <td class="px-6 py-4 font-medium text-gray-900">{{ $patient->last_name }} {{ $patient->first_name }}</td>
+                                <td class="px-6 py-4 font-medium text-gray-900">{{ $patient->user->last_name }} {{ $patient->user->first_name }}</td>
                                 <td class="px-6 py-4 text-gray-600">{{ $patient->cin ?? '—' }}</td>
                                 <td class="px-6 py-4 text-gray-600">{{ $patient->deleted_at->format('d/m/Y à H:i') }}</td>
                                 <td class="px-6 py-4 text-right">

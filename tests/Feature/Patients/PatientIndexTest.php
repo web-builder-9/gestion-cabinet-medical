@@ -13,9 +13,9 @@ class PatientIndexTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_staff_can_see_the_patient_list(): void
+    public function test_the_doctor_and_the_secretary_can_see_the_patient_list(): void
     {
-        Patient::factory()->create(['first_name' => 'Amira', 'last_name' => 'Trabelsi']);
+        Patient::factory()->withUser(['first_name' => 'Amira', 'last_name' => 'Trabelsi'])->create();
 
         foreach ([User::factory()->doctor()->create(), User::factory()->secretary()->create()] as $user) {
             $this->actingAs($user)
@@ -25,16 +25,16 @@ class PatientIndexTest extends TestCase
         }
     }
 
-    public function test_patients_and_guests_cannot_see_the_list(): void
+    public function test_patients_admins_and_guests_cannot_see_the_list(): void
     {
         $this->get('/patients')->assertRedirect('/login');
 
-        $this->actingAs(User::factory()->patient()->create())
-            ->get('/patients')
-            ->assertForbidden();
+        foreach ([User::factory()->patient()->create(), User::factory()->admin()->create()] as $user) {
+            $this->actingAs($user)->get('/patients')->assertForbidden();
+        }
     }
 
-    public function test_the_menu_shows_the_patients_link_to_the_staff_only(): void
+    public function test_the_menu_shows_the_patients_link_to_care_staff_only(): void
     {
         $this->actingAs(User::factory()->secretary()->create())
             ->get('/dashboard')
@@ -47,8 +47,8 @@ class PatientIndexTest extends TestCase
 
     public function test_the_list_can_be_searched(): void
     {
-        Patient::factory()->create(['first_name' => 'Amira', 'last_name' => 'Trabelsi']);
-        Patient::factory()->create(['first_name' => 'Karim', 'last_name' => 'Gharbi']);
+        Patient::factory()->withUser(['first_name' => 'Amira', 'last_name' => 'Trabelsi'])->create();
+        Patient::factory()->withUser(['first_name' => 'Karim', 'last_name' => 'Gharbi'])->create();
 
         $this->actingAs(User::factory()->secretary()->create())
             ->get('/patients?q=gharb')
@@ -66,7 +66,7 @@ class PatientIndexTest extends TestCase
 
     public function test_the_list_is_paginated_and_keeps_the_search(): void
     {
-        Patient::factory()->count(PatientController::PER_PAGE + 5)->create(['last_name' => 'Jebali']);
+        Patient::factory()->count(PatientController::PER_PAGE + 5)->withUser(['last_name' => 'Jebali'])->create();
 
         $response = $this->actingAs(User::factory()->doctor()->create())->get('/patients?q=Jebali');
 
@@ -78,8 +78,8 @@ class PatientIndexTest extends TestCase
 
     public function test_the_list_is_sorted_by_name(): void
     {
-        Patient::factory()->create(['first_name' => 'Zied', 'last_name' => 'Zouari']);
-        Patient::factory()->create(['first_name' => 'Ali', 'last_name' => 'Ayari']);
+        Patient::factory()->withUser(['first_name' => 'Zied', 'last_name' => 'Zouari'])->create();
+        Patient::factory()->withUser(['first_name' => 'Ali', 'last_name' => 'Ayari'])->create();
 
         $this->actingAs(User::factory()->doctor()->create())
             ->get('/patients')

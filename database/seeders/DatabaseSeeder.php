@@ -2,21 +2,24 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
-     * Remplit la base avec des données de démonstration 100 % fictives.
+     * Données de démonstration 100 % fictives, cohérentes avec les maquettes.
      * Commande : php artisan migrate:fresh --seed
+     *
+     * Comptes (mot de passe « password ») :
+     *   admin@cabinet.test (administrateur), secretaire@cabinet.test (secrétaire),
+     *   medecin@cabinet.test (médecin), patient@cabinet.test (patiente).
      */
     public function run(): void
     {
         $this->call([
-            UserSeeder::class,
+            SettingSeeder::class,
+            StaffSeeder::class,
+            AvailabilitySeeder::class,
             PatientSeeder::class,
             AppointmentSeeder::class,
         ]);

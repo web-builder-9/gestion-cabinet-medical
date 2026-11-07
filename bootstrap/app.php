@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Alias utilisé dans les routes : ->middleware('role:doctor,secretary')
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+        ]);
+
+        // RG-02 : déconnecte un compte désactivé pendant sa session.
+        $middleware->web(append: [
+            EnsureAccountIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

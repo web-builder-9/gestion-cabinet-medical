@@ -6,14 +6,14 @@
     <div>
         <x-input-label for="last_name" value="Nom" />
         <x-text-input id="last_name" name="last_name" type="text" class="mt-1 block w-full"
-                      :value="old('last_name', $patient->last_name)" required autofocus />
+                      :value="old('last_name', $patient->user->last_name)" required autofocus />
         <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
     </div>
 
     <div>
         <x-input-label for="first_name" value="Prénom" />
         <x-text-input id="first_name" name="first_name" type="text" class="mt-1 block w-full"
-                      :value="old('first_name', $patient->first_name)" required />
+                      :value="old('first_name', $patient->user->first_name)" required />
         <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
     </div>
 
@@ -49,14 +49,14 @@
     <div>
         <x-input-label for="phone" value="Téléphone" />
         <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full"
-                      :value="old('phone', $patient->phone)" placeholder="22 123 456" required />
+                      :value="old('phone', $patient->user->phone)" placeholder="22 123 456" required />
         <x-input-error class="mt-2" :messages="$errors->get('phone')" />
     </div>
 
     <div>
         <x-input-label for="email" value="Adresse e-mail (facultatif)" />
         <x-text-input id="email" name="email" type="email" class="mt-1 block w-full"
-                      :value="old('email', $patient->email)" />
+                      :value="old('email', $patient->user->email)" />
         <x-input-error class="mt-2" :messages="$errors->get('email')" />
     </div>
 
@@ -67,3 +67,17 @@
         <x-input-error class="mt-2" :messages="$errors->get('address')" />
     </div>
 </div>
+
+@unless ($patient->exists)
+    <div class="mt-6 rounded-md bg-gray-50 p-4">
+        <label class="flex items-start gap-3 text-sm text-gray-700">
+            <input type="checkbox" name="data_consent" value="1" @checked(old('data_consent'))
+                   class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <span>
+                Le patient a donné son accord pour le traitement de ses données personnelles et de santé
+                (loi organique n° 2004-63).
+            </span>
+        </label>
+        <x-input-error class="mt-2" :messages="$errors->get('data_consent')" />
+    </div>
+@endunless

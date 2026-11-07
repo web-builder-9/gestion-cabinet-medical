@@ -7,29 +7,24 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Fiche administrative du patient (identité, coordonnées).
-     * Les données médicales sont dans medical_records, pour pouvoir
-     * en restreindre l'accès au médecin.
+     * Classe « Patient » : spécialise Utilisateur. Nom, prénom, e-mail et
+     * téléphone sont dans users ; cette table porte les attributs propres au patient.
      */
     public function up(): void
     {
         Schema::create('patients', function (Blueprint $table) {
             $table->id();
-            // Compte utilisateur du patient (fonctionnalité prévue plus tard).
-            $table->foreignId('user_id')->nullable()->unique()->constrained()->nullOnDelete();
-            $table->string('first_name', 100);
-            $table->string('last_name', 100);
+            $table->foreignId('user_id')->unique()->constrained()->restrictOnDelete();
             $table->string('cin', 8)->nullable()->unique();
             $table->date('birth_date');
             $table->string('gender', 1);
-            $table->string('phone', 20);
-            $table->string('email')->nullable();
             $table->string('address')->nullable();
+            // Loi organique n° 2004-63 : consentement au traitement des données de santé.
+            $table->boolean('data_consent')->default(false);
+            $table->timestamp('consent_given_at')->nullable();
             $table->timestamps();
-            // Suppression « douce » : on ne perd jamais l'historique médical.
+            // RG-22 : suppression logique (archivage), jamais physique.
             $table->softDeletes();
-
-            $table->index(['last_name', 'first_name']);
         });
     }
 
