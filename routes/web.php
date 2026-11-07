@@ -13,6 +13,7 @@ use App\Http\Controllers\Doctor\UnavailabilityController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\Patient\BookingController;
+use App\Http\Controllers\Patient\MyConsultationController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\ProfileController;
@@ -72,6 +73,7 @@ Route::middleware(['auth', 'role:patient'])->group(function () {
     Route::get('mes-rendez-vous/{appointment}/modifier', [BookingController::class, 'edit'])->name('booking.edit');
     Route::put('mes-rendez-vous/{appointment}', [BookingController::class, 'update'])->name('booking.update');
     Route::patch('mes-rendez-vous/{appointment}/annuler', [BookingController::class, 'cancel'])->name('booking.cancel');
+    Route::get('mes-comptes-rendus', [MyConsultationController::class, 'index'])->name('my-consultations.index');
 });
 
 // Espace médecin : disponibilités, indisponibilités et consultations ; chaque médecin gère les siennes

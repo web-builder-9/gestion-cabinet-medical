@@ -19,8 +19,8 @@
 <body class="min-h-screen bg-[#e6ecec] font-sans antialiased">
     <header class="no-print border-b border-line bg-white">
         <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <a href="{{ Auth::user()->isDoctor() ? route('consultations.show', $consultation) : route('dashboard') }}" class="link inline-flex items-center gap-1 font-semibold">
-                <x-icon name="chevron-left" /> {{ Auth::user()->isDoctor() ? 'Retour à la consultation' : 'Mes rendez-vous' }}
+            <a href="{{ Auth::user()->isDoctor() ? route('consultations.show', $consultation) : route('my-consultations.index') }}" class="link inline-flex items-center gap-1 font-semibold">
+                <x-icon name="chevron-left" /> {{ Auth::user()->isDoctor() ? 'Retour à la consultation' : 'Mes comptes rendus' }}
             </a>
             <div class="flex flex-wrap items-center gap-3">
                 <span class="text-sm text-muted">Format A5 · 1 page</span>

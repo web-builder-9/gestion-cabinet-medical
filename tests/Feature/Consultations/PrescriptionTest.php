@@ -11,7 +11,7 @@ use Tests\Concerns\CreatesCabinetSchedule;
 use Tests\TestCase;
 
 /**
- * Ordonnance imprimable et PDF (BF-22, maquette 15).
+ * Ordonnance imprimable et PDF (BF-22, maquette 15) ; comptes rendus du patient (BF-11, RG-21).
  */
 class PrescriptionTest extends TestCase
 {
@@ -73,5 +73,24 @@ class PrescriptionTest extends TestCase
         $this->consultation->prescriptionItems()->delete();
 
         $this->actingAs($this->doctor->user)->get("/consultations/{$this->consultation->id}/ordonnance")->assertNotFound();
+    }
+
+    public function test_the_patient_reads_their_reports(): void
+    {
+        $this->actingAs($this->patient->user)
+            ->get('/mes-comptes-rendus')
+            ->assertOk()
+            ->assertSee('Jeudi 5 novembre 2026')
+            ->assertSee('Bronchite aiguë')
+            ->assertSee('Salbutamol inhalé 100 µg')
+            ->assertSee('Télécharger l\'ordonnance (PDF)', false);
+
+        $this->actingAs($this->patient->user)
+            ->get('/dashboard')
+            ->assertSee('Voir tous mes comptes rendus')
+            ->assertSee(route('consultations.prescription.pdf', $this->consultation));
+
+        // Le patient n'ouvre pas la page médecin de la consultation.
+        $this->actingAs($this->patient->user)->get("/consultations/{$this->consultation->id}")->assertForbidden();
     }
 }

@@ -98,15 +98,19 @@
                         </p>
                         <p><span class="text-muted">Motif :</span> {{ $lastConsultation->reason ?? '—' }}</p>
                         <p><span class="text-muted">Diagnostic :</span> {{ $lastConsultation->diagnosis ?? '—' }}</p>
-                        <p><span class="text-muted">Traitement :</span> {{ $lastConsultation->treatment ?? '—' }}</p>
-                        @if (Route::has('consultations.prescription') && $lastConsultation->prescriptionItems->isNotEmpty())
-                            <a href="{{ route('consultations.prescription', $lastConsultation) }}" class="btn btn-secondary w-full">
+                        <div>
+                            <span class="text-muted">Traitement :</span>
+                            @foreach ($lastConsultation->prescriptionItems as $item)
+                                <p>{{ $item->medication }} {{ $item->dosage }} <span class="text-muted">— {{ $item->instructions() }}</span></p>
+                            @endforeach
+                            {{ $lastConsultation->treatment ?? ($lastConsultation->prescriptionItems->isEmpty() ? '—' : '') }}
+                        </div>
+                        @if ($lastConsultation->prescriptionItems->isNotEmpty())
+                            <a href="{{ route('consultations.prescription.pdf', $lastConsultation) }}" class="btn btn-secondary w-full">
                                 <x-icon name="download" /> Télécharger l'ordonnance (PDF)
                             </a>
                         @endif
-                        @if (Route::has('my-consultations.index'))
-                            <a href="{{ route('my-consultations.index') }}" class="link inline-block">Voir tous mes comptes rendus</a>
-                        @endif
+                        <a href="{{ route('my-consultations.index') }}" class="link inline-block">Voir tous mes comptes rendus</a>
                     </div>
                 @else
                     <p class="p-5 text-sm text-muted">Vos comptes rendus apparaîtront ici après vos consultations.</p>
