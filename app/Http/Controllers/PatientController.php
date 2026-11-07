@@ -8,6 +8,7 @@ use App\Enums\Role;
 use App\Http\Requests\PatientRequest;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\AccountInvitations;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -65,7 +66,7 @@ class PatientController extends Controller
         ]);
     }
 
-    public function store(PatientRequest $request): RedirectResponse
+    public function store(PatientRequest $request, AccountInvitations $invitations): RedirectResponse
     {
         // Le compte (users), le dossier (patients) et le dossier médical vide sont
         // créés ensemble : si l'un échoue, rien n'est enregistré (transaction).
@@ -86,8 +87,14 @@ class PatientController extends Controller
             return $patient;
         });
 
-        return redirect()->route('patients.show', $patient)
-            ->with('status', "{$patient->full_name} a été ajouté(e).");
+        $status = "{$patient->full_name} a été ajouté(e).";
+
+        // Case « Créer l'accès à l'espace patient » : e-mail pour choisir son mot de passe.
+        if ($request->boolean('portal_access') && $invitations->send($patient->user)) {
+            $status .= " Un e-mail l'invite à choisir son mot de passe pour l'espace patient.";
+        }
+
+        return redirect()->route('patients.show', $patient)->with('status', $status);
     }
 
     public function show(Patient $patient): View

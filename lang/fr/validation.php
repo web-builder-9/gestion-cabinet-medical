@@ -218,6 +218,8 @@ return [
         'specialty_id' => 'spécialité',
         'presentation' => 'présentation',
         'data_consent' => 'consentement',
+        'portal_access' => 'accès à l\'espace patient',
+        'description' => 'description',
         'day_of_week' => 'jour',
         'start_time' => 'heure de début',
         'end_time' => 'heure de fin',

@@ -24,9 +24,10 @@ class InterfaceTest extends TestCase
             ->assertSee('Espace médecin')
             ->assertSee('Dossiers patients');
 
-        $this->actingAs(User::factory()->admin()->create())->get('/personnel')
+        $this->actingAs(User::factory()->admin()->create())->get('/admin/utilisateurs')
             ->assertSee('Administration')
             ->assertSee('Utilisateurs')
+            ->assertSee('Spécialités et paramètres')
             ->assertDontSee(route('patients.index'));
     }
 

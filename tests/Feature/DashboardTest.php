@@ -23,8 +23,11 @@ class DashboardTest extends TestCase
 
     public function test_every_role_can_open_the_dashboard(): void
     {
-        foreach (['doctor', 'secretary', 'admin', 'patient'] as $state) {
+        foreach (['doctor', 'secretary', 'patient'] as $state) {
             $this->actingAs(User::factory()->{$state}()->create())->get('/dashboard')->assertOk();
         }
+
+        // L'administrateur arrive directement sur la gestion des comptes (maquette 16).
+        $this->actingAs(User::factory()->admin()->create())->get('/dashboard')->assertRedirect(route('admin.users.index'));
     }
 }

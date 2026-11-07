@@ -50,12 +50,14 @@ class PatientRequest extends FormRequest
             'gender' => ['required', Rule::enum(Gender::class)],
             // RG-05 : le téléphone identifie le patient, il est unique.
             'phone' => ['required', 'regex:'.PhoneNumber::PATTERN, Rule::unique(User::class)->ignore($account)],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique(User::class)->ignore($account)],
+            // L'accès à l'espace patient passe par un e-mail d'invitation (maquette 9).
+            'email' => ['nullable', 'required_if_accepted:portal_access', 'email', 'max:255', Rule::unique(User::class)->ignore($account)],
             // Unique y compris parmi les patients archivés.
             'cin' => ['nullable', 'digits:8', Rule::unique(Patient::class)->ignore($this->patient())],
             'address' => ['nullable', 'string', 'max:255'],
             // Loi organique n° 2004-63 : accord du patient, recueilli à la création.
             'data_consent' => $this->patient() ? ['nullable'] : ['accepted'],
+            'portal_access' => ['nullable', 'boolean'],
         ];
     }
 
@@ -70,6 +72,7 @@ class PatientRequest extends FormRequest
             'phone.regex' => 'Le numéro de téléphone doit contenir 8 chiffres (ex. : 22 123 456).',
             'phone.unique' => 'Ce numéro appartient déjà à un autre patient : vérifiez qu\'il n\'a pas déjà un dossier.',
             'data_consent.accepted' => 'L\'accord du patient pour le traitement de ses données est obligatoire.',
+            'email.required_if_accepted' => 'L\'adresse e-mail est nécessaire pour créer l\'accès à l\'espace patient.',
         ];
     }
 

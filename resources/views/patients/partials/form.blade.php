@@ -75,7 +75,17 @@
 
 @unless ($patient->exists)
     <section class="space-y-3 border-t border-line bg-subtle p-5 sm:p-6">
-        <h2 class="card-title">Consentement</h2>
+        <h2 class="card-title">Compte et consentement</h2>
+        <label class="flex items-start gap-3 text-sm text-ink-2">
+            <input type="checkbox" name="portal_access" value="1" @checked(old('portal_access'))
+                   class="mt-0.5 rounded border-line-strong text-brand focus:ring-brand">
+            <span>
+                <strong class="font-semibold text-ink">Créer l'accès à l'espace patient.</strong>
+                Un e-mail est envoyé au patient pour choisir son mot de passe (adresse e-mail obligatoire).
+            </span>
+        </label>
+        <x-input-error :messages="$errors->get('portal_access')" />
+
         <label class="flex items-start gap-3 text-sm text-ink-2">
             <input type="checkbox" name="data_consent" value="1" @checked(old('data_consent'))
                    class="mt-0.5 rounded border-line-strong text-brand focus:ring-brand">

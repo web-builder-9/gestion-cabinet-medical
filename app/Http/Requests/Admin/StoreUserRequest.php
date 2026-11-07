@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Admin;
 
 use App\Enums\Role;
 use App\Models\Specialty;
@@ -9,12 +9,12 @@ use App\Support\PhoneNumber;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * Création d'un compte du personnel par l'administrateur (RG-03).
+ * Pas de mot de passe : la personne reçoit une invitation pour choisir le sien.
  */
-class StoreStaffRequest extends FormRequest
+class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -36,13 +36,13 @@ class StoreStaffRequest extends FormRequest
         return [
             'last_name' => ['required', 'string', 'max:100'],
             'first_name' => ['required', 'string', 'max:100'],
+            // RG-02 : l'adresse e-mail d'un compte est unique.
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'phone' => ['nullable', 'regex:'.PhoneNumber::PATTERN, Rule::unique(User::class)],
             // RG-01 : un seul rôle, parmi ceux du personnel.
             'role' => ['required', Rule::enum(Role::class)->only(Role::staff())],
             // RG-06 : un médecin est rattaché à une spécialité.
             'specialty_id' => ['nullable', 'required_if:role,doctor', Rule::exists(Specialty::class, 'id')],
-            'password' => ['required', 'confirmed', Password::defaults()],
         ];
     }
 

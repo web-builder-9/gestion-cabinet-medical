@@ -39,8 +39,13 @@
     --color-done-ink: #166534;
     --color-danger: #fde8e8;
     --color-danger-ink: #991b1b;
+    --color-danger-line: #f5c2c2;
     --color-neutral: #eef2f3;
     --color-neutral-ink: #3d4f55;
+
+    /* Pastille du rôle administrateur (maquette 16) */
+    --color-admin: #efedff;
+    --color-admin-ink: #5b21b6;
 }
 
 @layer base {
@@ -84,7 +89,7 @@
     }
 
     .btn-danger {
-        @apply border-danger bg-white text-danger-ink hover:bg-danger;
+        @apply border-danger-line bg-white text-danger-ink hover:bg-danger;
     }
 
     .btn-sm {
@@ -157,6 +162,28 @@
     }
 
     .alert-danger {
-        @apply border-danger bg-danger text-danger-ink;
+        @apply border-danger-line bg-danger text-danger-ink;
+    }
+
+    /* Onglets en « boutons collés » (Tous / Médecins / … ; Jour / Semaine). */
+    .segmented {
+        @apply inline-flex max-w-full overflow-x-auto rounded-lg border border-line-strong bg-white p-0.5 text-sm font-semibold;
+    }
+
+    .segmented > a {
+        @apply inline-flex h-10 items-center rounded-md px-4 whitespace-nowrap text-ink-3 hover:text-ink;
+    }
+
+    .segmented > a[aria-current] {
+        @apply bg-brand text-white hover:text-white;
+    }
+
+    /* Chiffre clé (activité du mois, tableau de bord). */
+    .stat-value {
+        @apply text-3xl font-bold text-ink tabular-nums;
+    }
+
+    .stat-label {
+        @apply text-sm text-muted;
     }
 }

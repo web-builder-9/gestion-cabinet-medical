@@ -6,8 +6,10 @@ use App\Enums\Gender;
 use App\Enums\Role;
 use App\Models\Patient;
 use App\Models\User;
+use App\Notifications\AccountInvitation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
@@ -147,6 +149,37 @@ class PatientFormTest extends TestCase
         $this->actingAs($this->secretary)
             ->post('/patients', $this->validData())
             ->assertSessionHasErrors(['cin' => 'La valeur du champ CIN est déjà utilisée.']);
+    }
+
+    public function test_the_patient_portal_access_sends_an_invitation(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->secretary)
+            ->post('/patients', $this->validData(['portal_access' => '1']))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', fn (string $status) => str_contains($status, 'choisir son mot de passe'));
+
+        $patient = Patient::firstOrFail();
+        Notification::assertSentTo($patient->user, AccountInvitation::class);
+    }
+
+    public function test_no_invitation_is_sent_without_the_portal_access_box(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->secretary)->post('/patients', $this->validData());
+
+        Notification::assertNothingSent();
+    }
+
+    public function test_the_portal_access_needs_an_email_address(): void
+    {
+        $this->actingAs($this->secretary)
+            ->post('/patients', $this->validData(['portal_access' => '1', 'email' => '']))
+            ->assertSessionHasErrors(['email' => 'L\'adresse e-mail est nécessaire pour créer l\'accès à l\'espace patient.']);
+
+        $this->assertDatabaseCount('patients', 0);
     }
 
     public function test_cin_and_email_are_optional(): void

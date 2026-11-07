@@ -1,18 +1,20 @@
 <?php
 
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SpecialtyController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
 // Application interne : pas de page vitrine. L'accueil mène au tableau de bord,
 // qui renvoie lui-même vers la connexion si l'utilisateur n'est pas connecté.
 Route::redirect('/', '/dashboard');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Tableau de bord : chaque rôle a le sien (voir DashboardController).
+Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -40,13 +42,23 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     Route::resource('patients', PatientController::class);
 });
 
-// Comptes du personnel : administrateur uniquement (RG-03 ; middleware + UserPolicy).
-// URL en français (/personnel), noms de routes en anglais (staff.*).
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::resource('personnel', StaffController::class)
-        ->parameters(['personnel' => 'user'])
-        ->names('staff')
-        ->except(['show', 'destroy']);
+// Administration : administrateur uniquement (RG-03 ; middleware + Policies).
+// URL en français, noms de routes en anglais (admin.users.*, admin.settings…).
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('utilisateurs', [UserController::class, 'index'])->name('users.index');
+    Route::post('utilisateurs', [UserController::class, 'store'])->name('users.store');
+    Route::get('utilisateurs/{user}/modifier', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('utilisateurs/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::patch('utilisateurs/{user}/desactiver', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::patch('utilisateurs/{user}/reactiver', [UserController::class, 'activate'])->name('users.activate');
+    Route::post('utilisateurs/{user}/invitation', [UserController::class, 'invite'])->name('users.invite');
+
+    Route::get('parametres', [SettingController::class, 'edit'])->name('settings');
+    Route::put('parametres', [SettingController::class, 'update'])->name('settings.update');
+
+    Route::post('specialites', [SpecialtyController::class, 'store'])->name('specialties.store');
+    Route::put('specialites/{specialty}', [SpecialtyController::class, 'update'])->name('specialties.update');
+    Route::delete('specialites/{specialty}', [SpecialtyController::class, 'destroy'])->name('specialties.destroy');
 });
 
 require __DIR__.'/auth.php';
