@@ -7,7 +7,6 @@ use App\Models\Doctor;
 use App\Services\WeekAgenda;
 use App\Support\DateParam;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -23,11 +22,7 @@ class AgendaController extends Controller
         Gate::authorize('viewAny', Appointment::class);
 
         $user = $request->user();
-        $doctors = Doctor::with(['user', 'specialty'])
-            ->whereHas('user', fn (Builder $q) => $q->where('is_active', true))
-            ->get()
-            ->sortBy(fn (Doctor $doctor) => $doctor->user->last_name)
-            ->values();
+        $doctors = Doctor::activeByName();
 
         // Un médecin ne voit que son propre agenda.
         $doctor = $user->isDoctor()

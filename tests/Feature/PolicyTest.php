@@ -232,6 +232,30 @@ class PolicyTest extends TestCase
         $this->assertRights('create', Unavailability::class, [true, false, false, false]);
     }
 
+    /**
+     * RG-16 : le patient modifie ou annule son rendez-vous actif jusqu'à 24 h avant.
+     */
+    public function test_a_patient_changes_their_own_appointment_until_the_deadline(): void
+    {
+        $patientUser = $this->users['Patient'];
+        $own = Patient::factory()->for($patientUser)->create();
+
+        $inThreeDays = Appointment::factory()->for($own)->at(now()->addDays(3))->confirmed()->create();
+        $tomorrowSoon = Appointment::factory()->for($own)->at(now()->addHours(20))->confirmed()->create();
+        $cancelled = Appointment::factory()->for($own)->at(now()->addDays(3))->cancelled()->create();
+        $someoneElse = Appointment::factory()->at(now()->addDays(3))->confirmed()->create();
+
+        $this->assertTrue($patientUser->can('update', $inThreeDays));
+        $this->assertTrue($patientUser->can('cancel', $inThreeDays));
+        $this->assertFalse($patientUser->can('cancel', $tomorrowSoon), 'moins de 24 h avant');
+        $this->assertFalse($patientUser->can('update', $cancelled), 'état final');
+        $this->assertFalse($patientUser->can('cancel', $someoneElse));
+        $this->assertFalse($patientUser->can('confirm', $inThreeDays));
+
+        // Passé le délai, le secrétariat peut toujours le faire.
+        $this->assertTrue($this->users['Secrétaire']->can('cancel', $tomorrowSoon));
+    }
+
     public function test_a_patient_can_see_their_own_file_and_appointments_only(): void
     {
         $patientUser = $this->users['Patient'];

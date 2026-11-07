@@ -7,12 +7,18 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
-// Pas d'inscription publique : les comptes sont créés par le médecin
-// (gestion du personnel), jamais par les visiteurs eux-mêmes.
+// Inscription publique réservée aux patients (RG-03) ; les comptes du personnel
+// sont créés par l'administrateur.
 Route::middleware('guest')->group(function () {
+    Route::get('inscription', [RegisteredUserController::class, 'create'])
+        ->name('register');
+
+    Route::post('inscription', [RegisteredUserController::class, 'store']);
+
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

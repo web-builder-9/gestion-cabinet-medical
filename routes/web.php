@@ -9,14 +9,15 @@ use App\Http\Controllers\AppointmentStatusController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
 use App\Http\Controllers\Doctor\UnavailabilityController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MedicalRecordController;
+use App\Http\Controllers\Patient\BookingController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-// Application interne : pas de page vitrine. L'accueil mène au tableau de bord,
-// qui renvoie lui-même vers la connexion si l'utilisateur n'est pas connecté.
-Route::redirect('/', '/dashboard');
+// Accueil public : les médecins et leur prochain créneau (maquette 1).
+Route::get('/', HomeController::class)->name('home');
 
 // Tableau de bord : chaque rôle a le sien (voir DashboardController).
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
@@ -45,6 +46,7 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     });
 
     Route::resource('patients', PatientController::class);
+    Route::post('patients/{patient}/invitation', [PatientController::class, 'invite'])->name('patients.invite');
 
     // Agenda (maquette 11) et rendez-vous (maquettes 7 et 10). « nouveau » est
     // déclaré avant {appointment}, sinon il serait pris pour un numéro de rendez-vous.
@@ -58,6 +60,16 @@ Route::middleware(['auth', 'role:doctor,secretary'])->group(function () {
     Route::patch('rendez-vous/{appointment}/confirmer', [AppointmentStatusController::class, 'confirm'])->name('appointments.confirm');
     Route::patch('rendez-vous/{appointment}/annuler', [AppointmentStatusController::class, 'cancel'])->name('appointments.cancel');
     Route::patch('rendez-vous/{appointment}/absent', [AppointmentStatusController::class, 'noShow'])->name('appointments.no-show');
+});
+
+// Espace patient : prise de rendez-vous en ligne, modification et annulation (RG-16).
+// « Mes rendez-vous » est le tableau de bord du patient (/dashboard).
+Route::middleware(['auth', 'role:patient'])->group(function () {
+    Route::get('prendre-rendez-vous', [BookingController::class, 'create'])->name('booking.create');
+    Route::post('prendre-rendez-vous', [BookingController::class, 'store'])->name('booking.store');
+    Route::get('mes-rendez-vous/{appointment}/modifier', [BookingController::class, 'edit'])->name('booking.edit');
+    Route::put('mes-rendez-vous/{appointment}', [BookingController::class, 'update'])->name('booking.update');
+    Route::patch('mes-rendez-vous/{appointment}/annuler', [BookingController::class, 'cancel'])->name('booking.cancel');
 });
 
 // Disponibilités et indisponibilités : chaque médecin gère les siennes
