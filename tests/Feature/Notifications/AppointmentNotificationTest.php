@@ -12,7 +12,7 @@ use Tests\Concerns\CreatesCabinetSchedule;
 use Tests\TestCase;
 
 /**
- * E-mails au patient à chaque étape du rendez-vous (BF-28).
+ * E-mails au patient (BF-28) et rappel avant le rendez-vous (BF-29).
  */
 class AppointmentNotificationTest extends TestCase
 {
@@ -107,5 +107,37 @@ class AppointmentNotificationTest extends TestCase
         $this->assertContains('**Jeudi 5 novembre 2026 à 10:00** avec Dr Salma Ben Ali.', $mail->introLines);
         $this->assertContains('En cas d\'empêchement, prévenez le cabinet au 75 600 600.', $mail->introLines);
         $this->assertSame('Voir mes rendez-vous', $mail->actionText);
+    }
+
+    public function test_reminders_are_sent_once_for_confirmed_appointments_of_the_next_24_hours(): void
+    {
+        $this->travelTo($this->thursday('09:00')->subDay()); // mercredi 09:00
+        $soon = Appointment::factory()->for($this->patient)->for($this->doctor)->at($this->thursday('08:30'))->confirmed()->create();
+        // Pas de rappel : en attente, trop loin, annulé.
+        Appointment::factory()->for($this->doctor)->at($this->thursday('08:00'))->pending()->create();
+        Appointment::factory()->for($this->doctor)->at($this->thursday('11:00'))->confirmed()->create();
+        Appointment::factory()->for($this->doctor)->at($this->thursday('08:00'))->cancelled()->create();
+
+        $this->artisan('rendez-vous:rappels')
+            ->expectsOutput('1 rappel(s) traité(s) pour les rendez-vous des 24 prochaines heures.')
+            ->assertSuccessful();
+        $this->artisan('rendez-vous:rappels')->expectsOutput('0 rappel(s) traité(s) pour les rendez-vous des 24 prochaines heures.');
+
+        Notification::assertSentToTimes($this->patient->user, AppointmentNotice::class, 1);
+        $this->assertSame(NotificationType::Reminder, $soon->notifications()->sole()->type);
+    }
+
+    public function test_the_reminder_delay_comes_from_the_settings(): void
+    {
+        Setting::current()->update(['reminder_hours' => 48]);
+        $this->travelTo($this->thursday('09:00')->subDays(2));
+        Appointment::factory()->for($this->patient)->for($this->doctor)->at($this->thursday('08:30'))->confirmed()->create();
+
+        $this->artisan('rendez-vous:rappels')->expectsOutput('1 rappel(s) traité(s) pour les rendez-vous des 48 prochaines heures.');
+    }
+
+    public function test_the_reminder_is_scheduled_every_hour(): void
+    {
+        $this->artisan('schedule:list')->expectsOutputToContain('rendez-vous:rappels')->assertSuccessful();
     }
 }
