@@ -112,12 +112,12 @@ class SpecialtyTest extends TestCase
         $specialty = Specialty::factory()->create();
 
         foreach ([User::factory()->doctor()->create(), User::factory()->secretary()->create(), User::factory()->patient()->create()] as $user) {
-            $this->actingAs($user)->post('/admin/specialites', ['name' => 'Neurologie'])->assertForbidden();
+            $this->actingAs($user)->post('/admin/specialites', ['name' => 'Spécialité refusée'])->assertForbidden();
             $this->actingAs($user)->put("/admin/specialites/{$specialty->id}", ['name' => 'Autre'])->assertForbidden();
             $this->actingAs($user)->delete("/admin/specialites/{$specialty->id}")->assertForbidden();
         }
 
         $this->assertModelExists($specialty);
-        $this->assertDatabaseMissing('specialties', ['name' => 'Neurologie']);
+        $this->assertDatabaseMissing('specialties', ['name' => 'Spécialité refusée']);
     }
 }

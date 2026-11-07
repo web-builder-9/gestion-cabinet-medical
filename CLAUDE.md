@@ -1,7 +1,11 @@
 # Gestion d'un cabinet médical
 
-Projet d'intégration de 3e année de Licence (développement web et multimédia, ISET Djerba), réalisé en binôme.
-Application web pour un cabinet médical : patients, rendez-vous, consultations, ordonnances, facturation, tableau de bord.
+Projet d'intégration de 3e année de Licence (développement web et multimédia, ISET Djerba), réalisé en groupe de quatre.
+Application web d'un cabinet médical : prise de rendez-vous en ligne, agenda des médecins, dossiers patients,
+consultations et ordonnances, administration. La facturation est hors périmètre.
+
+Référence : les livrables présentés à l'encadrante (cahier des charges avec BF-01 à BF-30, RG-01 à RG-23, BNF-01 à
+BNF-14 ; diagrammes UML ; 17 maquettes). Citer le numéro du besoin ou de la règle dans les commentaires et les tests.
 
 Le code sera présenté et défendu devant l'encadrante : privilégier un code clair et conventionnel plutôt qu'astucieux,
 et expliquer brièvement chaque choix.
@@ -10,10 +14,11 @@ et expliquer brièvement chaque choix.
 
 - Laravel 13, PHP 8.3 minimum
 - MySQL en développement ; SQLite en mémoire pour les tests (voir `phpunit.xml`)
-- Blade + Tailwind CSS 4 (plugin Vite) + Alpine.js
-- Authentification : Laravel Breeze (pile Blade), vues migrées de Tailwind 3 vers Tailwind 4
-- Tests : PHPUnit, tests Feature dans `tests/Feature`
+- Blade + Tailwind CSS 4 (plugin Vite) + Alpine.js ; Laravel Breeze (pile Blade) pour l'authentification
+- PDF : `barryvdh/laravel-dompdf` ; e-mails : Laravel Mail (`MAIL_MAILER=log` en local) ; rappels : planificateur
+- Tests : PHPUnit, tests Feature dans `tests/Feature` (un dossier par module)
 - CI : GitHub Actions (`.github/workflows/tests.yml`) à chaque push et pull request
+- Déploiement : Railway (`railway/`, `docs/deploiement-railway.md`)
 
 ## Commandes
 
@@ -25,29 +30,33 @@ php artisan key:generate
 php artisan migrate:fresh --seed # recrée la base avec les données de démo
 composer run dev                 # serveur + Vite (ou : php artisan serve et npm run dev)
 php artisan test                 # tous les tests
-php artisan test --filter=AppointmentOverlapTest
+php artisan test --filter=BookingTest
 vendor/bin/pint                  # formate le code PHP
 npm run build                    # assets de production
+php artisan rendez-vous:rappels  # rappels par e-mail (planifié toutes les heures)
 ```
 
-Comptes de démonstration (mot de passe `password`) : `medecin@cabinet.test`, `secretaire@cabinet.test`,
-`patient@cabinet.test`.
+Comptes de démonstration (mot de passe `password`) : `admin@cabinet.test`, `secretaire@cabinet.test`,
+`medecin@cabinet.test` (aussi `m.saidi@…`, `l.ammar@…`), `patient@cabinet.test`.
 
 ## Rôles et droits d'accès
 
-| Ressource                                 | Médecin | Secrétaire | Patient (plus tard) |
-| ----------------------------------------- | ------- | ---------- | ------------------- |
-| Fiche patient (identité, coordonnées)     | oui     | oui        | sa fiche            |
-| Dossier médical, consultations, notes     | oui     | non        | non                 |
-| Rendez-vous                               | oui     | oui        | ses rendez-vous     |
-| Ordonnances                               | oui     | non        | non                 |
-| Facturation                               | oui     | oui        | non                 |
-| Comptes du personnel                      | oui     | non        | non                 |
+| Ressource                                    | Administrateur | Secrétaire | Médecin        | Patient              |
+| -------------------------------------------- | -------------- | ---------- | -------------- | -------------------- |
+| Comptes du personnel, spécialités, paramètres | oui            | non        | non            | non                  |
+| Fiche patient (identité, coordonnées)        | non            | oui        | oui            | non (son profil)     |
+| Archiver / restaurer une fiche               | non            | non        | oui            | non                  |
+| Dossier médical, consultations               | non            | non        | oui (RG-21)    | ses comptes rendus, en lecture |
+| Rendez-vous                                  | non            | oui        | oui            | les siens (RG-16)    |
+| Disponibilités                               | non            | non        | les siennes    | non                  |
+| Ordonnance PDF                               | non            | non        | oui            | les siennes          |
 
-- Le rôle est dans `users.role` (enum `App\Enums\Role`), « patient » par défaut (le moins privilégié).
-- `role` n'est jamais dans `Fillable` : on l'affecte explicitement (`$user->role = Role::Secretary`).
-- Pas d'inscription publique ni de suppression de son propre compte : les comptes du personnel sont créés et modifiés
-  par le médecin dans `/personnel` (`StaffController`). Personne ne modifie son propre rôle.
+- Le rôle est dans `users.role` (enum `App\Enums\Role`), « patient » par défaut (le moins privilégié), un seul par
+  compte (RG-01). `role` n'est jamais dans `Fillable` : on l'affecte explicitement (`$user->role = Role::Secretary`).
+- Inscription publique réservée aux patients (`/inscription`, RG-03). Les comptes du personnel sont créés par
+  l'administrateur (`/admin/utilisateurs`) sans mot de passe : la personne reçoit une invitation par e-mail
+  (`AccountInvitations`). La secrétaire peut aussi envoyer l'accès à l'espace patient depuis une fiche.
+- Personne ne modifie son propre rôle ni ne désactive son propre compte ; un compte désactivé ne se connecte plus (RG-02).
 - Deux niveaux de protection :
   - middleware `role` sur les groupes de routes : `->middleware(['auth', 'role:doctor,secretary'])` ;
   - Policies (`app/Policies`, une par modèle, découvertes automatiquement) pour chaque action :
@@ -57,28 +66,41 @@ Comptes de démonstration (mot de passe `password`) : `medecin@cabinet.test`, `s
 
 ## Modèle de données
 
-Tables faites : `users` (+ role, phone), `patients`, `medical_records`, `appointments`.
-Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoices`.
+Tables : `users`, `patients` et `doctors` (héritage « une table par classe » : profil 1-1 avec `users`), `specialties`,
+`medical_records`, `settings` (une seule ligne, `Setting::current()`), `availabilities`, `unavailabilities`,
+`appointments`, `appointment_status_changes`, `consultations`, `prescription_items`, `appointment_notifications`.
 
 - Noms en anglais (classes, tables, colonnes, noms de routes) pour suivre les conventions Laravel ; textes affichés
-  et URL en français (`/personnel`, `/patients`, `/rendez-vous` ; routes `staff.*`, `patients.*`, `appointments.*`).
+  et URL en français (`/rendez-vous`, `/disponibilites`, `/admin/utilisateurs` ; routes `appointments.*`…).
 - Statuts et listes fixes : enums PHP dans `app/Enums`, stockés en texte (pas d'ENUM MySQL).
-- `medical_records` est séparé de `patients` pour réserver les données médicales au médecin.
-- `patients` utilise la suppression douce (`SoftDeletes`) : « Supprimer » archive la fiche, le médecin la restaure depuis
-  `/patients/archives`. Le CIN reste unique même parmi les archivés.
-- Téléphone des patients toujours stocké au format `22 123 456` (`Patient::formatPhone`, appelé par le modèle et par
-  `PatientRequest` avant validation).
-- Chaque patient a un dossier médical, créé vide avec la fiche (transaction dans `PatientController::store`).
-- Montants en `decimal(10,3)` (le dinar a trois décimales).
-- Conflits de rendez-vous : `Appointment::overlapping($doctorId, $start, $end, $ignoreId)`. Deux créneaux se chevauchent
+- `medical_records` est séparé de `patients` pour réserver les données médicales aux médecins.
+- `patients` utilise la suppression douce (`SoftDeletes`) ; rien n'est supprimé physiquement (RG-22) : un rendez-vous
+  est annulé, un compte désactivé.
+- Téléphones toujours stockés au format `22 123 456` (`App\Support\PhoneNumber::format`, appelé avant validation).
+- Chaque patient a un dossier médical, créé vide avec la fiche (transaction).
+- États d'un rendez-vous et transitions (RG-17) : `AppointmentStatus::allowedTransitions()` ; on change l'état avec
+  `$appointment->changeStatus(...)`. Chaque changement est historisé par les événements du modèle (RG-23).
+- Créneaux (RG-11) : `SlotFinder` (disponibilités − indisponibilités − rendez-vous actifs). Règles de prise
+  (RG-12 à RG-14) : `Booking::problem()`, communes au secrétariat et à l'espace patient. Deux créneaux se chevauchent
   si `debut1 < fin2` et `fin1 > debut2` ; les rendez-vous annulés sont ignorés.
+
+## Organisation
+
+- `app/Http/Controllers` : `Admin/`, `Doctor/`, `Patient/`, `Auth/` et les contrôleurs partagés (patients, rendez-vous,
+  agenda, ordonnance).
+- `app/Services` : `SlotFinder`, `Booking`, `DayPlanning`, `WeekAgenda`, `Statistics`, `AppointmentNotifier`,
+  `AccountInvitations`. `app/Support` : `Navigation` (menu par rôle), `PhoneNumber`, `Dates`, `DateParam`.
+- Composants Blade : `<x-flash-status />` (messages `status`, `warning`, `error`), `<x-appointment-status />`,
+  `<x-role-badge />`, `<x-doctor-card />`, `<x-agenda-block />`, `<x-icon name="…" />`, `<x-page-header />`.
+- Routes (`routes/web.php`) : une route fixe (`patients/archives`, `rendez-vous/nouveau`) est déclarée avant la route
+  avec paramètre du même préfixe, sinon elle serait prise pour un identifiant.
 
 ## Conventions de code
 
 - Contrôleurs de ressource minces ; validation dans des `FormRequest` ; autorisation dans des Policies ;
   logique métier réutilisable dans `app/Services`.
 - Eloquent ou Query Builder, pas de SQL brut.
-- Textes : les nouvelles vues sont écrites directement en français. `__()` et `lang/fr.json` servent aux vues de Breeze
+- Textes : les vues sont écrites directement en français. `__()` et `lang/fr.json` servent aux vues de Breeze
   et aux textes de Laravel ; les messages de validation et les noms de champs sont dans `lang/fr/validation.php`
   (ajouter chaque nouvelle colonne dans `attributes`).
 - Données de test et de démo : uniquement des factories et seeders fictifs, jamais de vraies données de patients.
@@ -87,12 +109,13 @@ Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoi
 
 ## Workflow Git
 
-- `main` est protégée : pas de push direct, tout passe par une pull request relue par l'autre membre du binôme,
+- `main` est protégée : pas de push direct, tout passe par une pull request relue par un autre membre du groupe,
   avec la CI au vert.
-- Une branche par fonctionnalité : `feature/patients`, `feature/rendez-vous`, `fix/...`.
+- Une branche par fonctionnalité : `feature/rendez-vous`, `fix/...`, `docs/...`.
 - Petits commits, messages en français au format `type: description`
   (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`). Exemple : `feat: CRUD patients`.
 - Ne jamais commiter `.env`, `vendor/`, `node_modules/`, `public/build/`.
+- Suivi des tâches dans Jira (projet « Cabinet médical », clé SCRUM) ; backlog importable : `docs/jira-backlog.csv`.
 
 ## Façon de travailler
 
@@ -102,17 +125,9 @@ Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoi
 
 ## Avancement
 
-Fait : squelette, authentification, interface en français, rôles (middleware, Policies, menu), gestion du personnel,
-module Patients (liste, recherche, fiche, ajout, modification, archives, dossier médical réservé au médecin).
+Fait : les 30 besoins fonctionnels du cahier des charges et les 17 maquettes — accueil public et inscription, espace
+patient (prise de rendez-vous en ligne, suivi, comptes rendus), secrétariat (dossiers, rendez-vous, tableau de bord,
+plannings), médecin (agenda, disponibilités, consultations, ordonnance PDF), administration (comptes, spécialités,
+paramètres, statistiques), e-mails et rappels, historique des états, configuration Railway.
 
-Organisation des routes patients (`routes/web.php`) : les routes réservées au médecin (archives, restauration, dossier
-médical) sont déclarées avant `Route::resource('patients', ...)`, sinon `/patients/archives` serait pris pour une fiche.
-
-Composants Blade du projet : `<x-flash-status />` (message après une action), `<x-appointment-status :status="..." />`
-(pastille de statut d'un rendez-vous).
-
-Prochaines étapes :
-
-1. Module Rendez-vous : agenda jour/semaine, création depuis la fiche patient, statuts, refus des conflits.
-2. Consultations, puis ordonnances (PDF), facturation et tableau de bord.
-3. Espace patient : comptes liés à une fiche par la secrétaire, consultation de ses rendez-vous.
+Pistes après la soutenance : rappels par SMS, facturation (hors périmètre actuel), export des statistiques.

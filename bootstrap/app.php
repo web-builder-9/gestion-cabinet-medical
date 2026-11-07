@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // En production (Railway), le HTTPS est géré par un proxy : on lui fait
+        // confiance pour que Laravel produise des adresses en https (BNF-05).
+        $middleware->trustProxies(at: '*');
+
         // Alias utilisé dans les routes : ->middleware('role:doctor,secretary')
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
