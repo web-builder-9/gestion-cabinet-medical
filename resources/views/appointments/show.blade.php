@@ -68,6 +68,23 @@
                     </li>
                 @endforeach
             </ol>
+
+            {{-- Journal des e-mails envoyés au patient (BF-28, BF-29). --}}
+            @if ($appointment->notifications->isNotEmpty())
+                <div class="border-t border-line px-5 py-4">
+                    <h3 class="text-sm font-semibold text-ink">E-mails au patient</h3>
+                    <ul class="mt-2 space-y-1 text-sm">
+                        @foreach ($appointment->notifications as $notification)
+                            <li class="flex justify-between gap-3">
+                                <span>{{ $notification->type->label() }}</span>
+                                <span class="text-muted">
+                                    {{ $notification->is_sent ? 'envoyé '.App\Support\Dates::short($notification->sent_at) : 'non envoyé (pas d\'adresse e-mail)' }}
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </section>
     </div>
 </x-app-layout>

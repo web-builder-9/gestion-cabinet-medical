@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Patient;
 
 use App\Enums\AppointmentStatus;
+use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Patient\BookingRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Setting;
+use App\Services\AppointmentNotifier;
 use App\Services\Booking;
 use App\Services\Slot;
 use App\Services\SlotFinder;
@@ -28,6 +30,7 @@ class BookingController extends Controller
     public function __construct(
         private readonly SlotFinder $slots,
         private readonly Booking $booking,
+        private readonly AppointmentNotifier $notifier,
     ) {}
 
     public function create(Request $request): View
@@ -57,7 +60,7 @@ class BookingController extends Controller
     {
         $slot = $this->booking->slotAt($request->doctor(), $request->start());
 
-        Appointment::create([
+        $appointment = Appointment::create([
             'patient_id' => $request->patient()->id,
             'doctor_id' => $request->doctor()->id,
             'starts_at' => $slot->start,
@@ -65,6 +68,9 @@ class BookingController extends Controller
             'reason' => $request->validated('reason'),
             'status' => AppointmentStatus::Pending,
         ]);
+
+        // BF-28 : accusé de réception de la demande.
+        $this->notifier->send($appointment, NotificationType::Confirmation);
 
         return redirect()->route('dashboard')
             ->with('status', "Demande envoyée pour {$this->when($slot->start)}. Le secrétariat va la confirmer ; vous serez prévenu(e) par e-mail.");
@@ -96,6 +102,10 @@ class BookingController extends Controller
             $appointment->save();
         }
 
+        if ($appointment->wasChanged('starts_at')) {
+            $this->notifier->send($appointment, NotificationType::Modification); // BF-28
+        }
+
         return redirect()->route('dashboard')
             ->with('status', "Rendez-vous déplacé au {$this->when($slot->start)}. Il est de nouveau en attente de confirmation.");
     }
@@ -105,6 +115,7 @@ class BookingController extends Controller
         Gate::authorize('cancel', $appointment);
 
         $appointment->changeStatus(AppointmentStatus::Cancelled);
+        $this->notifier->send($appointment, NotificationType::Cancellation); // BF-28
 
         return redirect()->route('dashboard')
             ->with('status', "Votre rendez-vous du {$this->when($appointment->starts_at)} est annulé.");
