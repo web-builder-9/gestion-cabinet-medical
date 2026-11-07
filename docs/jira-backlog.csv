@@ -1,0 +1,75 @@
+Issue ID,Parent ID,Issue Type,Summary,Description,Priority,Labels,Status
+E1,,Epic,"Comptes, connexion et rôles","Inscription, connexion, profil, mot de passe oublié, rôles et droits (RG-01 à RG-04).",High,comptes,Done
+E2,,Epic,Dossiers patients,"Création, modification, recherche et archivage des dossiers ; dossier médical réservé aux médecins.",High,patients,Done
+E3,,Epic,Disponibilités des médecins,Semaine type et indisponibilités ponctuelles (RG-09 à RG-11).,High,disponibilites,Done
+E4,,Epic,Rendez-vous (secrétariat),"Prise, confirmation, déplacement, annulation, absences, plannings (RG-12 à RG-17).",High,rendez-vous,Done
+E5,,Epic,Espace patient,"Page d'accueil publique, prise de rendez-vous en ligne, suivi (RG-15, RG-16).",High,espace-patient,Done
+E6,,Epic,Consultations et ordonnances,"Agenda du médecin, comptes rendus, ordonnance PDF (RG-18 à RG-21).",High,consultations,Done
+E7,,Epic,Administration,"Comptes du personnel, spécialités, paramètres, statistiques (RG-06 à RG-08).",High,administration,Done
+E8,,Epic,Notifications et historique,"E-mails au patient, rappels, historique des états (RG-23).",High,notifications,Done
+BF-01,E5,Story,BF-01 — Consulter la liste des médecins et de leurs spécialités,"En tant que visiteur, je peux consulter la liste des médecins et de leurs spécialités.
+Référence : cahier des charges, BF-01.",High,espace-patient,Done
+BF-02,E5,Story,BF-02 — Rechercher un médecin par nom ou par spécialité,"En tant que visiteur, je peux rechercher un médecin par nom ou par spécialité.
+Référence : cahier des charges, BF-02.",Medium,espace-patient,Done
+BF-03,E1,Story,BF-03 — Créer un compte patient,"En tant que visiteur, je peux créer un compte patient.
+Référence : cahier des charges, BF-03.",High,comptes,Done
+BF-04,E1,Story,BF-04 — Se connecter et se déconnecter,"En tant que utilisateur, je peux se connecter et se déconnecter.
+Référence : cahier des charges, BF-04.",High,comptes,Done
+BF-05,E1,Story,BF-05 — Consulter et modifier son profil et son mot de passe,"En tant que utilisateur, je peux consulter et modifier son profil et son mot de passe.
+Référence : cahier des charges, BF-05.",High,comptes,Done
+BF-06,E1,Story,BF-06 — Réinitialiser un mot de passe oublié par e-mail,"En tant que utilisateur, je peux réinitialiser un mot de passe oublié par e-mail.
+Référence : cahier des charges, BF-06.",Low,comptes,Done
+BF-07,E5,Story,BF-07 — Consulter les créneaux disponibles d'un médecin,"En tant que patient, je peux consulter les créneaux disponibles d'un médecin.
+Référence : cahier des charges, BF-07.",High,espace-patient,Done
+BF-08,E5,Story,BF-08 — Prendre un rendez-vous sur un créneau libre,"En tant que patient, je peux prendre un rendez-vous sur un créneau libre.
+Référence : cahier des charges, BF-08.",High,espace-patient,Done
+BF-09,E5,Story,BF-09 — Modifier ou annuler un rendez-vous dans le délai autorisé,"En tant que patient, je peux modifier ou annuler un rendez-vous dans le délai autorisé.
+Référence : cahier des charges, BF-09.",High,espace-patient,Done
+BF-10,E5,Story,BF-10 — Consulter ses rendez-vous à venir et leur état,"En tant que patient, je peux consulter ses rendez-vous à venir et leur état.
+Référence : cahier des charges, BF-10.",High,espace-patient,Done
+BF-11,E5,Story,BF-11 — Consulter l'historique de ses rendez-vous et le compte rendu de ses consultations,"En tant que patient, je peux consulter l'historique de ses rendez-vous et le compte rendu de ses consultations.
+Référence : cahier des charges, BF-11.",High,espace-patient,Done
+BF-12,E2,Story,"BF-12 — Créer, modifier et rechercher un dossier patient","En tant que secrétaire, je peux créer, modifier et rechercher un dossier patient.
+Référence : cahier des charges, BF-12.",High,patients,Done
+BF-13,E4,Story,BF-13 — Prendre un rendez-vous pour un patient (appel ou passage au cabinet),"En tant que secrétaire, je peux prendre un rendez-vous pour un patient (appel ou passage au cabinet).
+Référence : cahier des charges, BF-13.",High,rendez-vous,Done
+BF-14,E4,Story,"BF-14 — Confirmer, déplacer ou annuler un rendez-vous","En tant que secrétaire, je peux confirmer, déplacer ou annuler un rendez-vous.
+Référence : cahier des charges, BF-14.",High,rendez-vous,Done
+BF-15,E4,Story,BF-15 — Consulter le planning journalier et hebdomadaire de tous les médecins,"En tant que secrétaire, je peux consulter le planning journalier et hebdomadaire de tous les médecins.
+Référence : cahier des charges, BF-15.",High,rendez-vous,Done
+BF-16,E4,Story,BF-16 — Marquer un patient absent à son rendez-vous,"En tant que secrétaire, je peux marquer un patient absent à son rendez-vous.
+Référence : cahier des charges, BF-16.",Medium,rendez-vous,Done
+BF-17,E3,Story,"BF-17 — Définir ses disponibilités hebdomadaires (jours, horaires, durée d'un créneau)","En tant que médecin, je peux définir ses disponibilités hebdomadaires (jours, horaires, durée d'un créneau).
+Référence : cahier des charges, BF-17.",High,disponibilites,Done
+BF-18,E3,Story,"BF-18 — Déclarer une indisponibilité ponctuelle (congé, absence)","En tant que médecin, je peux déclarer une indisponibilité ponctuelle (congé, absence).
+Référence : cahier des charges, BF-18.",Medium,disponibilites,Done
+BF-19,E6,Story,BF-19 — Consulter son agenda par jour et par semaine,"En tant que médecin, je peux consulter son agenda par jour et par semaine.
+Référence : cahier des charges, BF-19.",High,consultations,Done
+BF-20,E6,Story,BF-20 — Consulter le dossier et l'historique des consultations d'un patient,"En tant que médecin, je peux consulter le dossier et l'historique des consultations d'un patient.
+Référence : cahier des charges, BF-20.",High,consultations,Done
+BF-21,E6,Story,"BF-21 — Enregistrer une consultation : motif, observations, diagnostic, traitement prescrit","En tant que médecin, je peux enregistrer une consultation : motif, observations, diagnostic, traitement prescrit.
+Référence : cahier des charges, BF-21.",High,consultations,Done
+BF-22,E6,Story,BF-22 — Imprimer ou exporter en PDF l'ordonnance d'une consultation,"En tant que médecin, je peux imprimer ou exporter en PDF l'ordonnance d'une consultation.
+Référence : cahier des charges, BF-22.",Low,consultations,Done
+BF-23,E7,Story,"BF-23 — Créer, modifier, activer ou désactiver les comptes du personnel et rattacher chaque médecin à sa spécialité","En tant que administrateur, je peux créer, modifier, activer ou désactiver les comptes du personnel et rattacher chaque médecin à sa spécialité.
+Référence : cahier des charges, BF-23.",High,administration,Done
+BF-24,E7,Story,BF-24 — Attribuer un rôle à chaque compte,"En tant que administrateur, je peux attribuer un rôle à chaque compte.
+Référence : cahier des charges, BF-24.",High,administration,Done
+BF-25,E7,Story,"BF-25 — Ajouter, modifier ou supprimer une spécialité","En tant que administrateur, je peux ajouter, modifier ou supprimer une spécialité.
+Référence : cahier des charges, BF-25.",High,administration,Done
+BF-26,E7,Story,"BF-26 — Paramétrer le cabinet : horaires d'ouverture, durée par défaut d'un créneau, délai d'annulation","En tant que administrateur, je peux paramétrer le cabinet : horaires d'ouverture, durée par défaut d'un créneau, délai d'annulation.
+Référence : cahier des charges, BF-26.",Medium,administration,Done
+BF-27,E7,Story,"BF-27 — Consulter des statistiques : nombre de rendez-vous, taux d'absence","En tant que administrateur, je peux consulter des statistiques : nombre de rendez-vous, taux d'absence.
+Référence : cahier des charges, BF-27.",Low,administration,Done
+BF-28,E8,Story,"BF-28 — Envoyer un e-mail au patient à chaque prise, confirmation, modification ou annulation de rendez-vous","Le service de notification doit envoyer un e-mail au patient à chaque prise, confirmation, modification ou annulation de rendez-vous.
+Référence : cahier des charges, BF-28.",High,notifications,Done
+BF-29,E8,Story,BF-29 — Envoyer un rappel par e-mail 24 h avant le rendez-vous,"Le service de notification doit envoyer un rappel par e-mail 24 h avant le rendez-vous.
+Référence : cahier des charges, BF-29.",High,notifications,Done
+BF-30,E8,Story,"BF-30 — Historiser chaque changement d'état d'un rendez-vous (date, auteur, ancien et nouvel état)","Le système doit historiser chaque changement d'état d'un rendez-vous (date, auteur, ancien et nouvel état).
+Référence : cahier des charges, BF-30.",High,notifications,Done
+T1,E1,Task,"Mettre en place le projet Laravel, Breeze, Tailwind 4 et la CI GitHub Actions","Mettre en place le projet Laravel, Breeze, Tailwind 4 et la CI GitHub Actions.",High,squelette,Done
+T2,E2,Task,"Écrire le modèle de données (migrations, enums, modèles) d'après le diagramme de classes","Écrire le modèle de données (migrations, enums, modèles) d'après le diagramme de classes.",High,base-de-donnees,Done
+T3,E1,Task,"Intégrer les maquettes : mise en page, composants, pages 403/404, responsive (BNF-09, BNF-10)","Intégrer les maquettes : mise en page, composants, pages 403/404, responsive (BNF-09, BNF-10).",High,interface,Done
+T4,E1,Task,"Matrice des droits par rôle testée (PolicyTest, BNF-03)","Matrice des droits par rôle testée (PolicyTest, BNF-03).",High,tests,Done
+T5,E8,Task,"Déployer sur Railway avec MySQL, HTTPS et planificateur (BNF-14)","Déployer sur Railway avec MySQL, HTTPS et planificateur (BNF-14).",Medium,deploiement,Done
+T6,E8,Task,"Documentation : README, routes, guide de déploiement","Documentation : README, routes, guide de déploiement.",Medium,documentation,Done
