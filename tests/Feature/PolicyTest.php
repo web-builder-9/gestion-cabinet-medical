@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Appointment;
+use App\Models\Availability;
 use App\Models\Doctor;
 use App\Models\MedicalRecord;
 use App\Models\Patient;
 use App\Models\Setting;
 use App\Models\Specialty;
+use App\Models\Unavailability;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -165,6 +167,39 @@ class PolicyTest extends TestCase
         $admin = $this->users['Administrateur'];
 
         $this->assertFalse($admin->can('toggleActive', $admin));
+    }
+
+    /**
+     * @return array<string, array{string, bool, bool, bool, bool}>
+     */
+    public static function availabilityMatrix(): array
+    {
+        return [
+            'voir ses disponibilités' => ['viewAny', true, false, false, false],
+            'ajouter une plage' => ['create', true, false, false, false],
+            'modifier sa plage' => ['update', true, false, false, false],
+            'supprimer sa plage' => ['delete', true, false, false, false],
+        ];
+    }
+
+    #[DataProvider('availabilityMatrix')]
+    public function test_availability_rights(string $ability, bool ...$expected): void
+    {
+        $target = in_array($ability, ['viewAny', 'create'], true)
+            ? Availability::class
+            : Availability::factory()->for($this->users['Médecin']->doctor)->create();
+
+        $this->assertRights($ability, $target, $expected);
+    }
+
+    public function test_a_doctor_manages_their_own_availabilities_and_unavailabilities_only(): void
+    {
+        $doctor = $this->users['Médecin'];
+
+        $this->assertFalse($doctor->can('update', Availability::factory()->create()));
+        $this->assertTrue($doctor->can('delete', Unavailability::factory()->for($doctor->doctor)->create()));
+        $this->assertFalse($doctor->can('delete', Unavailability::factory()->create()));
+        $this->assertRights('create', Unavailability::class, [true, false, false, false]);
     }
 
     public function test_a_patient_can_see_their_own_file_and_appointments_only(): void

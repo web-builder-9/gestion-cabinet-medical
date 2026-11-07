@@ -51,6 +51,24 @@ class Availability extends Model
     }
 
     /**
+     * « Lundi 08:00 – 12:00 » (messages d'erreur).
+     */
+    public function label(): string
+    {
+        return "{$this->day_of_week->label()} {$this->startLabel()} – {$this->endLabel()}";
+    }
+
+    /**
+     * RG-10 : chevauchement avec la plage [start, end[ du même jour.
+     * Heures au format « 08:00 » : l'ordre alphabétique est l'ordre chronologique.
+     * Des plages qui se touchent (08:00-12:00 puis 12:00-14:00) ne se chevauchent pas.
+     */
+    public function overlaps(string $start, string $end): bool
+    {
+        return $this->startLabel() < $end && $this->endLabel() > $start;
+    }
+
+    /**
      * Début de la plage pour une date donnée.
      */
     public function startsOn(DateTimeInterface $date): CarbonImmutable
