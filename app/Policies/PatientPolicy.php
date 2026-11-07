@@ -42,6 +42,14 @@ class PatientPolicy
         return $user->isDoctor();
     }
 
+    /**
+     * Liste des patients archivés (supprimés « en douceur »).
+     */
+    public function viewArchived(User $user): bool
+    {
+        return $user->isDoctor();
+    }
+
     public function restore(User $user, Patient $patient): bool
     {
         return $user->isDoctor();

@@ -64,7 +64,11 @@ Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoi
   et URL en français (`/personnel`, `/patients`, `/rendez-vous` ; routes `staff.*`, `patients.*`, `appointments.*`).
 - Statuts et listes fixes : enums PHP dans `app/Enums`, stockés en texte (pas d'ENUM MySQL).
 - `medical_records` est séparé de `patients` pour réserver les données médicales au médecin.
-- `patients` utilise la suppression douce (`SoftDeletes`) : on ne perd jamais l'historique.
+- `patients` utilise la suppression douce (`SoftDeletes`) : « Supprimer » archive la fiche, le médecin la restaure depuis
+  `/patients/archives`. Le CIN reste unique même parmi les archivés.
+- Téléphone des patients toujours stocké au format `22 123 456` (`Patient::formatPhone`, appelé par le modèle et par
+  `PatientRequest` avant validation).
+- Chaque patient a un dossier médical, créé vide avec la fiche (transaction dans `PatientController::store`).
 - Montants en `decimal(10,3)` (le dinar a trois décimales).
 - Conflits de rendez-vous : `Appointment::overlapping($doctorId, $start, $end, $ignoreId)`. Deux créneaux se chevauchent
   si `debut1 < fin2` et `fin1 > debut2` ; les rendez-vous annulés sont ignorés.
@@ -99,11 +103,16 @@ Tables à venir : `consultations`, `prescriptions`, `prescription_items`, `invoi
 ## Avancement
 
 Fait : squelette, authentification, interface en français, rôles (middleware, Policies, menu), gestion du personnel,
-modèle de données des patients et rendez-vous.
+module Patients (liste, recherche, fiche, ajout, modification, archives, dossier médical réservé au médecin).
+
+Organisation des routes patients (`routes/web.php`) : les routes réservées au médecin (archives, restauration, dossier
+médical) sont déclarées avant `Route::resource('patients', ...)`, sinon `/patients/archives` serait pris pour une fiche.
+
+Composants Blade du projet : `<x-flash-status />` (message après une action), `<x-appointment-status :status="..." />`
+(pastille de statut d'un rendez-vous).
 
 Prochaines étapes :
 
-1. Module Patients : liste, recherche, création, modification, dossier médical (médecin seulement).
-2. Module Rendez-vous : agenda jour/semaine, statuts, refus des conflits.
-3. Consultations, puis ordonnances (PDF), facturation et tableau de bord.
-4. Espace patient : comptes liés à une fiche par la secrétaire, consultation de ses rendez-vous.
+1. Module Rendez-vous : agenda jour/semaine, création depuis la fiche patient, statuts, refus des conflits.
+2. Consultations, puis ordonnances (PDF), facturation et tableau de bord.
+3. Espace patient : comptes liés à une fiche par la secrétaire, consultation de ses rendez-vous.

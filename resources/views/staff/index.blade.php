@@ -14,11 +14,7 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
-            @if (session('status'))
-                <div class="p-4 rounded-md bg-green-50 text-sm text-green-800">
-                    {{ session('status') }}
-                </div>
-            @endif
+            <x-flash-status />
 
             <div class="bg-white shadow-xs sm:rounded-lg overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">

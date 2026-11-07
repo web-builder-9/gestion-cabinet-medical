@@ -37,6 +37,33 @@ class Patient extends Model
     }
 
     /**
+     * Le téléphone est toujours enregistré au format « 22 123 456 »,
+     * quelle que soit la saisie (« 22123456 », « +216 22 12 34 56 »…).
+     */
+    protected function phone(): Attribute
+    {
+        return Attribute::set(fn (?string $value) => self::formatPhone($value));
+    }
+
+    public static function formatPhone(?string $value): ?string
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+
+        // Indicatif tunisien facultatif : +216 ou 00216.
+        if (strlen($digits) === 11 && str_starts_with($digits, '216')) {
+            $digits = substr($digits, 3);
+        } elseif (strlen($digits) === 13 && str_starts_with($digits, '00216')) {
+            $digits = substr($digits, 5);
+        }
+
+        if (strlen($digits) !== 8) {
+            return $value; // format inattendu : on ne touche à rien (la validation l'aura refusé)
+        }
+
+        return substr($digits, 0, 2).' '.substr($digits, 2, 3).' '.substr($digits, 5, 3);
+    }
+
+    /**
      * Âge en années, calculé à partir de la date de naissance.
      */
     protected function age(): Attribute
