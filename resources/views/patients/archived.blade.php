@@ -1,55 +1,42 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Patients archivés</h2>
+<x-app-layout title="Patients archivés" subtitle="Rien n'est effacé : le dossier médical et les rendez-vous sont conservés (RG-22).">
+    <x-slot name="actions">
+        <a href="{{ route('patients.index') }}" class="btn btn-secondary"><x-icon name="chevron-left" /> Retour à la liste</a>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
-            <p class="text-sm text-gray-600">
-                Les fiches archivées n'apparaissent plus dans la liste des patients, mais rien n'est effacé :
-                dossier médical et rendez-vous sont conservés. Restaurer une fiche la remet dans la liste.
-            </p>
-
-            <div class="bg-white shadow-xs sm:rounded-lg overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50 text-left text-gray-600">
-                        <tr>
-                            <th class="px-6 py-3 font-medium">Nom</th>
-                            <th class="px-6 py-3 font-medium">CIN</th>
-                            <th class="px-6 py-3 font-medium">Archivé le</th>
-                            <th class="px-6 py-3"><span class="sr-only">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse ($patients as $patient)
-                            <tr>
-                                <td class="px-6 py-4 font-medium text-gray-900">{{ $patient->user->last_name }} {{ $patient->user->first_name }}</td>
-                                <td class="px-6 py-4 text-gray-600">{{ $patient->cin ?? '—' }}</td>
-                                <td class="px-6 py-4 text-gray-600">{{ $patient->deleted_at->format('d/m/Y à H:i') }}</td>
-                                <td class="px-6 py-4 text-right">
-                                    @can('restore', $patient)
-                                        <form method="POST" action="{{ route('patients.restore', $patient) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="text-indigo-600 hover:text-indigo-800">Restaurer</button>
-                                        </form>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-4 text-gray-500">Aucun patient archivé.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            {{ $patients->links() }}
-
-            <a href="{{ route('patients.index') }}" class="inline-block text-sm text-gray-600 hover:text-gray-900">
-                &larr; Retour à la liste
-            </a>
-        </div>
+    <div class="card table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>CIN</th>
+                    <th>Archivé le</th>
+                    <th><span class="sr-only">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($patients as $patient)
+                    <tr>
+                        <td class="font-semibold">{{ $patient->user->last_name }} {{ $patient->user->first_name }}</td>
+                        <td class="text-ink-3">{{ $patient->cin ?? '—' }}</td>
+                        <td class="text-ink-3">{{ $patient->deleted_at->format('d/m/Y à H:i') }}</td>
+                        <td class="text-right">
+                            @can('restore', $patient)
+                                <form method="POST" action="{{ route('patients.restore', $patient) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="btn btn-secondary btn-sm">Restaurer</button>
+                                </form>
+                            @endcan
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-muted">Aucun patient archivé.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
+
+    {{ $patients->links('pagination.simple-pages') }}
 </x-app-layout>

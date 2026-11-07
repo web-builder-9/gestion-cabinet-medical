@@ -45,8 +45,12 @@ class PatientFactory extends Factory
      */
     public function withUser(array $attributes): static
     {
-        return $this->state(fn () => [
-            'user_id' => User::factory()->patient()->state($attributes),
+        // Le prénom par défaut reste cohérent avec le genre du patient.
+        return $this->state(fn (array $patient) => [
+            'user_id' => User::factory()->patient()->state([
+                'first_name' => FakeIdentity::firstName($patient['gender'] ?? null),
+                ...$attributes,
+            ]),
         ]);
     }
 

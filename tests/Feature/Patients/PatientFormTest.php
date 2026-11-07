@@ -50,7 +50,7 @@ class PatientFormTest extends TestCase
         $this->actingAs($this->secretary)
             ->get('/patients/create')
             ->assertOk()
-            ->assertSee('Nouveau patient')
+            ->assertSee('Nouveau dossier patient')
             ->assertSee('loi organique n° 2004-63');
     }
 
