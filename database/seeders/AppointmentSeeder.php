@@ -230,8 +230,12 @@ class AppointmentSeeder extends Seeder
             'treatment' => $treatment,
         ]);
 
-        foreach (array_values($items) as $position => [$medication, $dosage, $posology, $duration]) {
-            $consultation->prescriptionItems()->create(compact('position', 'medication', 'dosage', 'posology', 'duration'));
+        foreach (array_values($items) as $index => [$medication, $dosage, $posology, $duration]) {
+            // Lignes numérotées à partir de 1, comme sur l'ordonnance.
+            $consultation->prescriptionItems()->create([
+                'position' => $index + 1,
+                ...compact('medication', 'dosage', 'posology', 'duration'),
+            ]);
         }
     }
 
