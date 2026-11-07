@@ -3,21 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AppointmentStatus;
+use App\Enums\NotificationType;
 use App\Models\Appointment;
+use App\Services\AppointmentNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
  * Changements d'état d'un rendez-vous par le personnel (BF-14, BF-16).
- * Chaque changement est historisé automatiquement (RG-23, voir Appointment::booted).
+ * Chaque changement est historisé automatiquement (RG-23, voir Appointment::booted)
+ * et le patient est prévenu par e-mail (BF-28).
  */
 class AppointmentStatusController extends Controller
 {
-    public function confirm(Appointment $appointment): RedirectResponse
+    public function confirm(Appointment $appointment, AppointmentNotifier $notifier): RedirectResponse
     {
         Gate::authorize('confirm', $appointment);
 
         $appointment->changeStatus(AppointmentStatus::Confirmed);
+        $notifier->send($appointment, NotificationType::Confirmation); // BF-28
 
         return back()->with('status', "Le rendez-vous de {$appointment->patient->full_name} ({$this->when($appointment)}) est confirmé.");
     }
@@ -25,11 +29,12 @@ class AppointmentStatusController extends Controller
     /**
      * Annuler libère le créneau ; le rendez-vous reste dans l'historique (RG-22).
      */
-    public function cancel(Appointment $appointment): RedirectResponse
+    public function cancel(Appointment $appointment, AppointmentNotifier $notifier): RedirectResponse
     {
         Gate::authorize('cancel', $appointment);
 
         $appointment->changeStatus(AppointmentStatus::Cancelled);
+        $notifier->send($appointment, NotificationType::Cancellation); // BF-28
 
         return back()->with('status', "Le rendez-vous de {$appointment->patient->full_name} ({$this->when($appointment)}) est annulé : le créneau est libéré.");
     }

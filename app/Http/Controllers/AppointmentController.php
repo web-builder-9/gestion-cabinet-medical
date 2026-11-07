@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AppointmentStatus;
+use App\Enums\NotificationType;
 use App\Http\Requests\AppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
+use App\Services\AppointmentNotifier;
 use App\Services\Booking;
 use App\Services\Slot;
 use App\Services\SlotFinder;
@@ -31,6 +33,7 @@ class AppointmentController extends Controller
     public function __construct(
         private readonly SlotFinder $slots,
         private readonly Booking $booking,
+        private readonly AppointmentNotifier $notifier,
     ) {}
 
     public function index(Request $request): View
@@ -90,6 +93,9 @@ class AppointmentController extends Controller
             'status' => AppointmentStatus::Confirmed,
         ]);
 
+        // BF-28 : e-mail de confirmation au patient.
+        $this->notifier->send($appointment, NotificationType::Confirmation);
+
         return redirect()->route('appointments.show', $appointment)
             ->with('status', "Rendez-vous enregistré : {$this->describe($appointment)}.");
     }
@@ -98,7 +104,7 @@ class AppointmentController extends Controller
     {
         Gate::authorize('view', $appointment);
 
-        $appointment->load(['patient.user', 'doctor.user', 'doctor.specialty', 'statusChanges.author', 'consultation']);
+        $appointment->load(['patient.user', 'doctor.user', 'doctor.specialty', 'statusChanges.author', 'consultation', 'notifications']);
 
         return view('appointments.show', ['appointment' => $appointment]);
     }
@@ -127,6 +133,11 @@ class AppointmentController extends Controller
             'reason' => $request->validated('reason'),
             'notes' => $request->validated('notes'),
         ]);
+
+        // BF-28 : le patient est prévenu si le créneau ou le médecin change.
+        if ($appointment->wasChanged(['starts_at', 'doctor_id'])) {
+            $this->notifier->send($appointment, NotificationType::Modification);
+        }
 
         return redirect()->route('appointments.show', $appointment)
             ->with('status', "Rendez-vous déplacé : {$this->describe($appointment)}.");

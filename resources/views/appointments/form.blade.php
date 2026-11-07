@@ -158,7 +158,11 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap justify-end gap-3 border-t border-line px-5 py-4 sm:px-6">
+                <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line px-5 py-4 sm:px-6">
+                    {{-- BF-28 et BF-29 --}}
+                    <p class="mr-auto text-sm text-muted">
+                        {{ $moving ? 'Le patient est prévenu du changement par e-mail.' : 'À l\'enregistrement, le patient reçoit un e-mail de confirmation, puis un rappel '.App\Models\Setting::current()->reminder_hours.' h avant.' }}
+                    </p>
                     <a href="{{ $moving ? route('appointments.show', $appointment) : ($patient ? route('patients.show', $patient) : route('appointments.index')) }}" class="btn btn-secondary">Annuler</a>
                     <button type="submit" class="btn btn-primary" @disabled(! $patient || ! $doctor)>
                         {{ $moving ? 'Enregistrer le déplacement' : 'Enregistrer le rendez-vous' }}
