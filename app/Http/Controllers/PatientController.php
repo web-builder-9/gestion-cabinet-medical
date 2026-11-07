@@ -6,9 +6,12 @@ use App\Enums\AppointmentStatus;
 use App\Enums\Gender;
 use App\Enums\Role;
 use App\Http\Requests\PatientRequest;
+use App\Models\Appointment;
+use App\Models\Consultation;
 use App\Models\Patient;
 use App\Models\User;
 use App\Services\AccountInvitations;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -107,8 +110,8 @@ class PatientController extends Controller
         Gate::authorize('view', $patient);
 
         $patient->load('user');
+        $user = request()->user();
 
-        // Rendez-vous en lecture seule (leur gestion viendra avec le module Rendez-vous).
         return view('patients.show', [
             'patient' => $patient,
             // Affiché seulement si la MedicalRecordPolicy l'autorise (@can dans la vue).
@@ -122,6 +125,18 @@ class PatientController extends Controller
                 ->orderByDesc('starts_at')
                 ->limit(self::PAST_APPOINTMENTS)
                 ->get(),
+            // Historique des consultations, tous médecins : médecins uniquement (RG-21).
+            'consultations' => $user->can('viewAny', Consultation::class)
+                ? Consultation::with(['appointment.doctor.user', 'prescriptionItems'])
+                    ->whereHas('appointment', fn (Builder $q) => $q->where('patient_id', $patient->id))
+                    ->latest('consulted_at')
+                    ->get()
+                : collect(),
+            // Rendez-vous du jour que le médecin connecté peut transformer en consultation.
+            'startable' => $user->isDoctor()
+                ? $patient->appointments()->where('doctor_id', $user->doctor?->id)->onDate(today())
+                    ->get()->first(fn (Appointment $a) => $user->can('create', [Consultation::class, $a]))
+                : null,
         ]);
     }
 

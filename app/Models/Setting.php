@@ -66,4 +66,16 @@ class Setting extends Model
     {
         return $this->saturday_opening_time !== null && $this->saturday_closing_time !== null;
     }
+
+    /**
+     * Ville du cabinet : dernière partie de l'adresse (« …, Midoun, Djerba » → « Djerba »).
+     */
+    public function city(): ?string
+    {
+        if (! $this->address) {
+            return null;
+        }
+
+        return trim((string) last(explode(',', $this->address))) ?: null;
+    }
 }
