@@ -7,6 +7,12 @@
         <a href="{{ route('agenda', ['medecin' => $appointment->doctor_id, 'date' => $appointment->starts_at->format('Y-m-d')]) }}" class="btn btn-secondary">
             <x-icon name="calendar" /> Voir dans l'agenda
         </a>
+        {{-- Compte rendu : médecins uniquement (RG-21). --}}
+        @if ($appointment->consultation && Auth::user()->can('view', $appointment->consultation))
+            <a href="{{ route('consultations.show', $appointment->consultation) }}" class="btn btn-primary"><x-icon name="consultation" /> Compte rendu</a>
+        @elsecan('create', [App\Models\Consultation::class, $appointment])
+            <a href="{{ route('consultations.create', $appointment) }}" class="btn btn-primary"><x-icon name="consultation" /> Commencer la consultation</a>
+        @endif
     </x-slot>
 
     <x-flash-status />

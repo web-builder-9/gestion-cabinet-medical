@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Appointment;
 use App\Models\Availability;
+use App\Models\Consultation;
 use App\Models\Doctor;
 use App\Models\MedicalRecord;
 use App\Models\Patient;
@@ -254,6 +255,29 @@ class PolicyTest extends TestCase
 
         // Passé le délai, le secrétariat peut toujours le faire.
         $this->assertTrue($this->users['Secrétaire']->can('cancel', $tomorrowSoon));
+    }
+
+    /**
+     * RG-20 à RG-22 : comptes rendus lus par les médecins et par le patient concerné ;
+     * modifiés par leur auteur seulement ; jamais supprimés.
+     */
+    public function test_consultation_rights(): void
+    {
+        $doctor = $this->users['Médecin'];
+        $patientUser = $this->users['Patient'];
+        $own = Consultation::factory()->for(
+            Appointment::factory()->for(Patient::factory()->for($patientUser))->for($doctor->doctor)->completed()
+        )->create();
+        $byAnotherDoctor = Consultation::factory()->create();
+
+        $this->assertRights('viewAny', Consultation::class, [true, false, false, false]);
+        $this->assertRights('view', $own, [true, false, false, true]);
+        $this->assertRights('update', $own, [true, false, false, false]);
+        $this->assertRights('delete', $own, [false, false, false, false]);
+
+        $this->assertTrue($doctor->can('view', $byAnotherDoctor));
+        $this->assertFalse($doctor->can('update', $byAnotherDoctor));
+        $this->assertFalse($patientUser->can('view', $byAnotherDoctor));
     }
 
     public function test_a_patient_can_see_their_own_file_and_appointments_only(): void

@@ -31,7 +31,7 @@ trait CreatesCabinetSchedule
             Availability::factory()->for($this->doctor)->on($day, '08:00', '12:00')->create();
         }
 
-        $this->patient = Patient::factory()->withUser(['first_name' => 'Hedi', 'last_name' => 'Mansouri'])->withMedicalRecord()->create();
+        $this->patient = Patient::factory()->withUser(['first_name' => 'Hedi', 'last_name' => 'Mansouri'])->withMedicalRecord()->create(['gender' => 'M']);
         $this->secretary = User::factory()->secretary()->create(['first_name' => 'Nadia', 'last_name' => 'Jlassi']);
     }
 

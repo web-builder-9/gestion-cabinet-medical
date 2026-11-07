@@ -98,7 +98,7 @@ class AppointmentController extends Controller
     {
         Gate::authorize('view', $appointment);
 
-        $appointment->load(['patient.user', 'doctor.user', 'doctor.specialty', 'statusChanges.author']);
+        $appointment->load(['patient.user', 'doctor.user', 'doctor.specialty', 'statusChanges.author', 'consultation']);
 
         return view('appointments.show', ['appointment' => $appointment]);
     }

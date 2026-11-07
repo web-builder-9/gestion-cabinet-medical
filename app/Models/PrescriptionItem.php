@@ -19,4 +19,14 @@ class PrescriptionItem extends Model
     {
         return $this->belongsTo(Consultation::class);
     }
+
+    /**
+     * « 2 bouffées si gêne, pendant 10 jours. » (ordonnance et compte rendu).
+     */
+    public function instructions(): string
+    {
+        $text = collect([$this->posology, $this->duration ? "pendant {$this->duration}" : null])->filter()->implode(', ');
+
+        return $text === '' ? '' : ucfirst($text).'.';
+    }
 }

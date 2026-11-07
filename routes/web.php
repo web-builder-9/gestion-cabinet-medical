@@ -8,11 +8,13 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentStatusController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
+use App\Http\Controllers\Doctor\ConsultationController;
 use App\Http\Controllers\Doctor\UnavailabilityController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\Patient\BookingController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -72,8 +74,8 @@ Route::middleware(['auth', 'role:patient'])->group(function () {
     Route::patch('mes-rendez-vous/{appointment}/annuler', [BookingController::class, 'cancel'])->name('booking.cancel');
 });
 
-// Disponibilités et indisponibilités : chaque médecin gère les siennes
-// (middleware + AvailabilityPolicy / UnavailabilityPolicy).
+// Espace médecin : disponibilités, indisponibilités et consultations ; chaque médecin gère les siennes
+// (middleware + AvailabilityPolicy, UnavailabilityPolicy, ConsultationPolicy).
 Route::middleware(['auth', 'role:doctor'])->group(function () {
     Route::get('disponibilites', [AvailabilityController::class, 'index'])->name('availabilities.index');
     Route::post('disponibilites', [AvailabilityController::class, 'store'])->name('availabilities.store');
@@ -83,6 +85,20 @@ Route::middleware(['auth', 'role:doctor'])->group(function () {
 
     Route::post('indisponibilites', [UnavailabilityController::class, 'store'])->name('unavailabilities.store');
     Route::delete('indisponibilites/{unavailability}', [UnavailabilityController::class, 'destroy'])->name('unavailabilities.destroy');
+
+    // Consultations (maquette 14) : ConsultationPolicy (RG-19 à RG-21).
+    Route::get('consultations', [ConsultationController::class, 'index'])->name('consultations.index');
+    Route::get('rendez-vous/{appointment}/consultation', [ConsultationController::class, 'create'])->name('consultations.create');
+    Route::post('rendez-vous/{appointment}/consultation', [ConsultationController::class, 'store'])->name('consultations.store');
+    Route::get('consultations/{consultation}', [ConsultationController::class, 'show'])->name('consultations.show');
+    Route::get('consultations/{consultation}/modifier', [ConsultationController::class, 'edit'])->name('consultations.edit');
+    Route::put('consultations/{consultation}', [ConsultationController::class, 'update'])->name('consultations.update');
+});
+
+// Ordonnance (maquette 15) : médecins et patient concerné (ConsultationPolicy::view, RG-21).
+Route::middleware(['auth', 'role:doctor,patient'])->group(function () {
+    Route::get('consultations/{consultation}/ordonnance', [PrescriptionController::class, 'show'])->name('consultations.prescription');
+    Route::get('consultations/{consultation}/ordonnance/pdf', [PrescriptionController::class, 'download'])->name('consultations.prescription.pdf');
 });
 
 // Administration : administrateur uniquement (RG-03 ; middleware + Policies).

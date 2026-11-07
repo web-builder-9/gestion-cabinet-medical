@@ -18,6 +18,12 @@
             @can('update', $patient)
                 <a href="{{ route('patients.edit', $patient) }}" class="btn btn-secondary"><x-icon name="edit" /> Modifier</a>
             @endcan
+            {{-- Rendez-vous confirmé du jour avec le médecin connecté : il peut démarrer la consultation. --}}
+            @if ($startable)
+                <a href="{{ route('consultations.create', $startable) }}" class="btn btn-primary">
+                    <x-icon name="consultation" /> Démarrer la consultation ({{ $startable->starts_at->format('H:i') }})
+                </a>
+            @endif
             @can('delete', $patient)
                 <form method="POST" action="{{ route('patients.destroy', $patient) }}"
                       onsubmit="return confirm(@js("Archiver le dossier de {$patient->full_name} ? Il pourra être restauré."))">
@@ -112,6 +118,39 @@
                 <div class="card-header"><h2 class="card-title">Derniers rendez-vous</h2></div>
                 @include('patients.partials.appointments', ['appointments' => $past, 'empty' => 'Aucun rendez-vous passé.'])
             </section>
+
+            {{-- Historique des consultations, tous médecins (BF-20) : médecins uniquement (RG-21). --}}
+            @can('viewAny', App\Models\Consultation::class)
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Historique des consultations</h2>
+                        <span class="text-sm text-muted">{{ trans_choice(':count consultation|:count consultations', $consultations->count()) }} · tous médecins</span>
+                    </div>
+                    <ul class="divide-y divide-line-soft">
+                        @forelse ($consultations as $consultation)
+                            @php($own = $consultation->appointment->doctor->user_id === Auth::id())
+                            <li class="flex gap-3 px-5 py-4 text-sm">
+                                <span class="mt-1.5 size-2.5 flex-none rounded-full bg-brand" aria-hidden="true"></span>
+                                <div class="space-y-0.5">
+                                    <a href="{{ route('consultations.show', $consultation) }}" class="font-semibold text-ink hover:text-brand hover:underline">
+                                        {{ $consultation->consulted_at->translatedFormat('j F Y') }} · {{ $consultation->reason }}
+                                    </a>
+                                    <p class="text-muted">{{ $consultation->appointment->doctor->display_name }}{{ $own ? '' : ' · lecture seule' }}</p>
+                                    @if ($consultation->diagnosis)
+                                        <p><span class="text-muted">Diagnostic :</span> {{ $consultation->diagnosis }}</p>
+                                    @endif
+                                    @if ($consultation->prescriptionItems->isNotEmpty())
+                                        <p><span class="text-muted">Traitement :</span> {{ $consultation->prescriptionItems->pluck('medication')->implode(', ') }}</p>
+                                        <a href="{{ route('consultations.prescription', $consultation) }}" class="link">Voir l'ordonnance</a>
+                                    @endif
+                                </div>
+                            </li>
+                        @empty
+                            <li class="px-5 py-6 text-center text-sm text-muted">Aucune consultation enregistrée.</li>
+                        @endforelse
+                    </ul>
+                </section>
+            @endcan
         </div>
     </div>
 </x-app-layout>
