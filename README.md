@@ -7,7 +7,7 @@ consultations et ordonnances, administration du cabinet.
 L'application suit les livrables présentés à l'encadrante : cahier des charges (30 besoins fonctionnels BF,
 23 règles de gestion RG, 14 besoins non fonctionnels BNF), diagrammes UML et 17 maquettes.
 
-Équipe : Mohamed Ali Sahlaoui, Houssem Ghandri, Wassim Ibn Rhouma, Soufienne Hadj Ismail.
+Équipe : Mohamed Ali Sahlaoui, Houssem Ghandri, Wassim Ibn Rhouma, Sofiane Haj Smail.
 Encadrante : Mme Mouna Kort.
 
 ## Fonctionnalités par rôle
