@@ -13,6 +13,7 @@ Le guide pour présenter et défendre le code est dans [`GUIDE-SOUTENANCE.md`](G
 | Mongoose 9           | Schémas, validation et requêtes MongoDB                                   |
 | MongoDB Atlas        | Base de données dans le cloud (offre gratuite M0)                         |
 | bcryptjs             | Hachage des mots de passe                                                 |
+| jsonwebtoken         | Jeton de connexion (JWT) pour les routes protégées                        |
 | pdfkit               | Ordonnance au format PDF                                                  |
 | node:test, supertest | Tests automatiques (`npm test`), lancés aussi par GitHub Actions          |
 
@@ -86,7 +87,7 @@ Chaque classe a les cinq mêmes routes. Exemple avec les spécialités :
 
 | Classe            | URL                        | Routes en plus                                          |
 | ----------------- | -------------------------- | ------------------------------------------------------- |
-| Utilisateur       | `/api/utilisateurs`        | `POST /connexion` (seConnecter) ; filtre `?role=`       |
+| Utilisateur       | `/api/utilisateurs`        | `POST /connexion` (seConnecter, renvoie un jeton) ; `GET /moi` (protégée par le jeton) ; filtre `?role=` |
 | Patient           | `/api/patients`            |                                                         |
 | Medecin           | `/api/medecins`            | filtre `?specialite=`                                   |
 | Specialite        | `/api/specialites`         |                                                         |
@@ -124,7 +125,7 @@ Les dates s'envoient avec le fuseau de Djerba (`+01:00`) ; MongoDB les enregistr
 | 200  | Succès                                                | liste, affichage, modification, suppression     |
 | 201  | Ressource créée                                       | `POST /api/patients`                            |
 | 400  | Données invalides (détail par champ dans `erreurs`)   | champ obligatoire manquant, identifiant mal formé |
-| 401  | Connexion refusée                                     | mauvais mot de passe, compte désactivé          |
+| 401  | Connexion refusée ou jeton manquant                   | mauvais mot de passe, compte désactivé, jeton absent, faux ou expiré |
 | 404  | Ressource ou route introuvable                        | `GET /api/patients/<id inconnu>`                |
 | 409  | Conflit avec les données existantes                   | e-mail déjà utilisé, créneau pris, transition interdite |
 | 500  | Erreur imprévue du serveur (détail dans le terminal)  |                                                 |
@@ -136,7 +137,8 @@ Les dates s'envoient avec le fuseau de Djerba (`+01:00`) ; MongoDB les enregistr
 | E-mail, téléphone, CIN, libellé uniques | index `unique` des schémas                                     | 409     |
 | Référence vers un document existant     | validateur `doitExister` (`models/validateurs.js`)             | 400     |
 | Mot de passe haché, jamais renvoyé      | hook `pre('save')`, `select: false`, `toJSON` (`Utilisateur.js`) |       |
-| RG-02 : compte désactivé                | `seConnecter()`                                                | 401     |
+| RG-02 : compte désactivé                | `seConnecter()` et `exigerConnexion`                           | 401     |
+| Route protégée par jeton JWT            | `exigerConnexion` (`middlewares/authentification.js`)          | 401     |
 | RG-12 : pas de chevauchement            | `chevauche()`, `trouverConflit()` (`RendezVous.js`)            | 409     |
 | RG-17 : transitions d'état              | `TRANSITIONS` (`enums.js`), `changerEtat()`                    | 409     |
 | RG-23 : historique des états            | `changerEtat()` crée un `HistoriqueEtat`                       |         |
@@ -154,8 +156,8 @@ api-express/
 │   ├── routes/             un fichier de routes par classe + index.js (préfixe /api)
 │   ├── controllers/        un contrôleur par classe : lister, afficher, creer, modifier, supprimer
 │   ├── models/             un schéma Mongoose par classe + enums.js, validateurs.js, index.js
-│   ├── middlewares/        erreurs.js : route introuvable et gestionnaire d'erreurs central
-│   └── utils/              ErreurApi, choisir (champs autorisés), dates
+│   ├── middlewares/        erreurs.js (404 et erreurs), authentification.js (jeton JWT)
+│   └── utils/              ErreurApi, choisir (champs autorisés), dates, jeton (JWT)
 ├── scripts/seed.js         données de démonstration
 ├── tests/                  tests node:test + supertest
 └── postman/                collection Postman
@@ -195,5 +197,9 @@ Plan B sans Internet : installer MongoDB Community Server, mettre
 - Mots de passe hachés avec bcrypt, jamais renvoyés dans une réponse.
 - Chaque contrôleur ne garde que les champs prévus (`utils/choisir.js`) : un client ne peut pas changer `_id`, `role`
   ou `etat` en les ajoutant au JSON. L'e-mail de connexion est converti en texte (pas d'injection NoSQL).
-- Hors périmètre de la séance : l'authentification des requêtes (jeton JWT) et les droits par rôle, gérés dans
-  l'application Laravel par les Policies.
+- La connexion renvoie un **jeton JWT** (identifiant et rôle, signés avec `JWT_SECRET`, valable 2 h). Le middleware
+  `exigerConnexion` le vérifie : en-tête `Authorization: Bearer <jeton>`, signature, expiration, compte toujours actif.
+  Il protège `GET /api/utilisateurs/moi` ; les routes CRUD restent ouvertes pour la démonstration. Étape suivante : le
+  placer sur chaque route et vérifier le rôle, comme les Policies de l'application Laravel.
+- Sans `JWT_SECRET` dans `.env`, une clé de développement signe les jetons (le serveur l'annonce au démarrage) ; en
+  production (`NODE_ENV=production`), la clé est obligatoire.
