@@ -3,8 +3,10 @@
  */
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const jwt = require('jsonwebtoken');
 
 const { api, modeles } = require('./aide');
+const { creerJeton, verifierJeton, cleSecrete } = require('../src/utils/jeton');
 const { TRANSITIONS, ETATS_ACTIFS } = require('../src/models/enums');
 const { formaterTelephone } = require('../src/models/validateurs');
 const choisir = require('../src/utils/choisir');
@@ -58,6 +60,33 @@ describe('Outils', () => {
       assert.deepEqual(Object.keys(erreur.errors).sort(), ['dureeCreneau', 'heureFin', 'jour']);
       return true;
     });
+  });
+});
+
+describe('Jeton JWT', () => {
+  it('contient l\'identifiant et le rôle, et se vérifie avec la même clé', () => {
+    const contenu = verifierJeton(creerJeton({ id: '6b09bd1e8a417e553d9f0a54', role: 'MEDECIN' }));
+    assert.equal(contenu.sub, '6b09bd1e8a417e553d9f0a54');
+    assert.equal(contenu.role, 'MEDECIN');
+    assert.ok(contenu.exp > contenu.iat, 'le jeton a une date d\'expiration');
+  });
+
+  it('refuse un jeton signé avec une autre clé ou non signé', () => {
+    assert.throws(() => verifierJeton(jwt.sign({ sub: 'x' }, 'une-autre-cle')), { name: 'JsonWebTokenError' });
+    assert.throws(() => verifierJeton(jwt.sign({ sub: 'x' }, null, { algorithm: 'none' })), { name: 'JsonWebTokenError' });
+  });
+
+  it('protège GET /api/utilisateurs/moi : sans jeton, jeton faux ou expiré → 401', async () => {
+    const expire = jwt.sign({ sub: 'x', exp: Math.floor(Date.now() / 1000) - 60 }, cleSecrete());
+
+    const sansJeton = await api().get('/api/utilisateurs/moi');
+    const jetonFaux = await api().get('/api/utilisateurs/moi').set('Authorization', 'Bearer abc');
+    const jetonExpire = await api().get('/api/utilisateurs/moi').set('Authorization', `Bearer ${expire}`);
+
+    assert.equal(sansJeton.status, 401);
+    assert.equal(jetonFaux.status, 401);
+    assert.equal(jetonExpire.status, 401);
+    assert.match(jetonExpire.body.message, /expiré/);
   });
 });
 
