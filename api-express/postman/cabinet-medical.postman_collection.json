@@ -10,6 +10,10 @@
       "value": "http://localhost:3000/api"
     },
     {
+      "key": "jeton",
+      "value": ""
+    },
+    {
       "key": "utilisateurId",
       "value": ""
     },
@@ -245,9 +249,12 @@
                   "pm.test('Statut 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('Connecté', function () {",
+                  "pm.test('Connecté, avec un jeton JWT', function () {",
                   "    pm.expect(pm.response.json().connecte).to.eql(true);",
-                  "});"
+                  "    pm.expect(pm.response.json().jeton.split('.')).to.have.lengthOf(3);",
+                  "});",
+                  "// Le jeton est gardé dans {{jeton}} pour les routes protégées.",
+                  "pm.collectionVariables.set('jeton', pm.response.json().jeton);"
                 ]
               }
             }
@@ -261,6 +268,7 @@
               }
             ],
             "url": "{{baseUrl}}/utilisateurs/connexion",
+            "description": "Renvoie un jeton JWT, gardé dans la variable {{jeton}} de la collection.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"sonia.kefi@cabinet.test\",\n  \"motDePasse\": \"password\"\n}",
@@ -269,6 +277,65 @@
                   "language": "json"
                 }
               }
+            }
+          }
+        },
+        {
+          "name": "Qui est connecté ? — route protégée par le jeton",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Compte du jeton', function () {",
+                  "    pm.expect(pm.response.json().email).to.eql('sonia.kefi@cabinet.test');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/utilisateurs/moi",
+            "description": "Onglet Authorization : Bearer Token {{jeton}}. Postman envoie l'en-tête « Authorization: Bearer <jeton> ».",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jeton}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Route protégée sans jeton",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Statut 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/utilisateurs/moi",
+            "auth": {
+              "type": "noauth"
             }
           }
         },

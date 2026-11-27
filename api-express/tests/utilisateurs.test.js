@@ -96,6 +96,28 @@ describe('Utilisateurs, patients et médecins', { skip: sansBase }, () => {
       assert.equal(reponse.body.utilisateur.motDePasse, undefined);
     });
 
+    it('renvoie un jeton JWT qui ouvre la route protégée /moi', async () => {
+      await fabriquer.secretaire({ email: 'nadia@test.tn' });
+
+      const connexion = await api().post('/api/utilisateurs/connexion').send({ email: 'nadia@test.tn', motDePasse: 'password' });
+      assert.equal(connexion.body.jeton.split('.').length, 3); // en-tête.contenu.signature
+
+      const moi = await api().get('/api/utilisateurs/moi').set('Authorization', `Bearer ${connexion.body.jeton}`);
+      assert.equal(moi.status, 200);
+      assert.equal(moi.body.email, 'nadia@test.tn');
+      assert.equal(moi.body.motDePasse, undefined);
+    });
+
+    it('refuse le jeton d\'un compte désactivé depuis la connexion (RG-02)', async () => {
+      const secretaire = await fabriquer.secretaire({ email: 'nadia@test.tn' });
+      const connexion = await api().post('/api/utilisateurs/connexion').send({ email: 'nadia@test.tn', motDePasse: 'password' });
+
+      await api().put(`/api/utilisateurs/${secretaire.id}`).send({ actif: false });
+
+      const moi = await api().get('/api/utilisateurs/moi').set('Authorization', `Bearer ${connexion.body.jeton}`);
+      assert.equal(moi.status, 401);
+    });
+
     it('refuse un mauvais mot de passe, un compte désactivé (RG-02) et une injection NoSQL', async () => {
       await fabriquer.secretaire({ email: 'nadia@test.tn' });
       await fabriquer.secretaire({ email: 'hela@test.tn', actif: false });

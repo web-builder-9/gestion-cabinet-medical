@@ -150,4 +150,9 @@ npm test        # tests avec base : MONGODB_URI_TEST (nom contenant « test »)
   `new Utilisateur()` + `save()` (pas `create()`).
 - Modifier avec `findById()` + `set()` + `save()` pour relancer validation et hooks ; champs acceptés filtrés par
   `choisir()`.
+- Connexion : `POST /api/utilisateurs/connexion` renvoie un jeton JWT (`utils/jeton.js`, `JWT_SECRET`, 2 h) ; le
+  middleware `exigerConnexion` protège `GET /api/utilisateurs/moi`. Les routes CRUD restent ouvertes (démonstration).
+- Répartition de la séance : Mohamed Ali (Utilisateur, Patient, Medecin + JWT), Houssem (RendezVous, HistoriqueEtat,
+  Notification), Wassim (Specialite, Disponibilite, Indisponibilite), Sofiane (DossierMedical, Consultation,
+  ParametresCabinet).
 - CI : `.github/workflows/api-express.yml` (service mongo:8, `npm test`, seed, collection Postman avec newman).

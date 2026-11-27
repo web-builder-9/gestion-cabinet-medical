@@ -2,6 +2,7 @@ const { Utilisateur } = require('../models');
 const { Role } = require('../models/enums');
 const ErreurApi = require('../utils/ErreurApi');
 const choisir = require('../utils/choisir');
+const { creerJeton } = require('../utils/jeton');
 
 /**
  * Classe Utilisateur.
@@ -86,7 +87,15 @@ async function connexion(req, res) {
     throw new ErreurApi(401, 'Connexion refusée : e-mail ou mot de passe incorrect, ou compte désactivé.');
   }
 
-  res.json({ connecte: true, utilisateur });
+  // Jeton à renvoyer ensuite dans l'en-tête « Authorization: Bearer <jeton> » des routes protégées.
+  const jeton = creerJeton(utilisateur);
+
+  res.json({ connecte: true, jeton, utilisateur });
 }
 
-module.exports = { lister, afficher, creer, modifier, supprimer, connexion };
+// GET /api/utilisateurs/moi        route protégée : le compte à qui appartient le jeton
+function moi(req, res) {
+  res.json(req.utilisateur); // rempli par le middleware exigerConnexion
+}
+
+module.exports = { lister, afficher, creer, modifier, supprimer, connexion, moi };
