@@ -6,6 +6,10 @@ const { connecterBase } = require('./src/config/db');
 
 const PORT = process.env.PORT || 3000;
 
+if (!process.env.JWT_SECRET) {
+  console.warn('JWT_SECRET absent de .env : les jetons sont signés avec une clé de développement.');
+}
+
 connecterBase(process.env.MONGODB_URI)
   .then(() => {
     app.listen(PORT, () => {
