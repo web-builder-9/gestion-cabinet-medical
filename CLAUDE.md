@@ -131,3 +131,23 @@ plannings), médecin (agenda, disponibilités, consultations, ordonnance PDF), a
 paramètres, statistiques), e-mails et rappels, historique des états, configuration Railway.
 
 Pistes après la soutenance : rappels par SMS, facturation (hors périmètre actuel), export des statistiques.
+
+## API Express (`api-express/`)
+
+API REST séparée pour la séance du 29/11/2026 : CRUD des 12 classes du diagramme de classes avec Express 5,
+Mongoose 9 et MongoDB Atlas, testée avec Postman (`postman/`). Noms de classes, champs et URL en français, comme le
+diagramme. Voir `api-express/README.md` et `api-express/GUIDE-SOUTENANCE.md`.
+
+```bash
+cd api-express && npm install && cp .env.example .env   # MONGODB_URI = chaîne Atlas
+npm run seed    # vide puis remplit la base de démo
+npm run dev     # http://localhost:3000/api
+npm test        # tests avec base : MONGODB_URI_TEST (nom contenant « test »)
+```
+
+- Un modèle, un fichier de routes et un contrôleur par classe (lister, afficher, creer, modifier, supprimer).
+- Héritage Utilisateur → Patient, Medecin par discriminateurs (clé `role`) ; un compte du personnel se crée avec
+  `new Utilisateur()` + `save()` (pas `create()`).
+- Modifier avec `findById()` + `set()` + `save()` pour relancer validation et hooks ; champs acceptés filtrés par
+  `choisir()`.
+- CI : `.github/workflows/api-express.yml` (service mongo:8, `npm test`, seed, collection Postman avec newman).

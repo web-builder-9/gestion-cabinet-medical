@@ -1,0 +1,79 @@
+name: API Express
+
+# Tests de l'API Express + MongoDB (dossier api-express/), à chaque modification de ce dossier.
+on:
+  push:
+    paths:
+      - 'api-express/**'
+      - '.github/workflows/api-express.yml'
+  pull_request:
+    paths:
+      - 'api-express/**'
+      - '.github/workflows/api-express.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    name: Node 22 + MongoDB 8
+
+    defaults:
+      run:
+        working-directory: api-express
+
+    # Un serveur MongoDB local pour la CI (en démonstration, l'API utilise MongoDB Atlas).
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      MONGODB_URI_TEST: mongodb://localhost:27017/cabinet_medical_test
+      MONGODB_URI: mongodb://localhost:27017/cabinet_medical_demo
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: api-express/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Tests (node:test + supertest)
+        run: npm test
+
+      - name: Données de démonstration
+        run: npm run seed
+
+      - name: Démarrer l'API
+        run: |
+          npm start > api.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/api > /dev/null && exit 0
+            sleep 1
+          done
+          cat api.log
+          exit 1
+
+      - name: Collection Postman (newman)
+        run: npx --yes newman@6.2.3 run postman/cabinet-medical.postman_collection.json --env-var baseUrl=http://localhost:3000/api
+
+      - name: Journal de l'API
+        if: failure()
+        run: cat api.log || true
