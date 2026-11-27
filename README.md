@@ -23,6 +23,10 @@ Encadrante : Mme Mouna Kort.
 
 Chaque changement d'état d'un rendez-vous est historisé avec sa date et son auteur (BF-30, RG-23).
 
+> **API Express + MongoDB** : le dossier [`api-express/`](api-express) contient une API REST (Express, MongoDB Atlas)
+> avec le CRUD des 12 classes du diagramme de classes, testable avec Postman (séance du 29/11/2026). Voir son
+> [README](api-express/README.md) et son [guide de soutenance](api-express/GUIDE-SOUTENANCE.md).
+
 ## Stack
 
 - Laravel 13 (PHP 8.3 minimum), MySQL en développement, SQLite en mémoire pour les tests
