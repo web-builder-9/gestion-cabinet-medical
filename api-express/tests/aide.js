@@ -70,12 +70,13 @@ const fabriquer = {
     });
   },
 
+  // new + save() : Utilisateur.create() chercherait une sous-classe « SECRETAIRE » (voir models/Utilisateur.js).
   secretaire: (donnees = {}) => {
     const n = suivant();
-    return modeles.Utilisateur.create({
+    return new modeles.Utilisateur({
       nom: 'Secrétaire', prenom: `Compte ${n}`, email: `secretaire${n}@test.tn`, motDePasse: 'password',
       telephone: String(90000000 + n), role: 'SECRETAIRE', ...donnees,
-    });
+    }).save();
   },
 
   rendezVous: async (donnees = {}) => {

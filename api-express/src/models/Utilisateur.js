@@ -11,6 +11,9 @@ const { formaterTelephone } = require('./validateurs');
  * sont tous dans la collection « utilisateurs ». Le champ « role » indique la sous-classe :
  * PATIENT → Patient (models/Patient.js), MEDECIN → Medecin (models/Medecin.js),
  * SECRETAIRE et ADMINISTRATEUR → Utilisateur simple (pas d'attribut en plus).
+ *
+ * Attention : un compte du personnel se crée avec new Utilisateur({ ... }) puis save().
+ * Utilisateur.create({ role: 'SECRETAIRE' }) échoue, car Mongoose y cherche une sous-classe « SECRETAIRE ».
  */
 const utilisateurSchema = new mongoose.Schema(
   {

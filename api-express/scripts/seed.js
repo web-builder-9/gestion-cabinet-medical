@@ -65,10 +65,11 @@ async function main() {
     { nom: 'Jlassi', prenom: 'Nadia', email: 'secretaire@cabinet.test', telephone: '20 100 300', role: Role.SECRETAIRE },
     { nom: 'Mabrouk', prenom: 'Hela', email: 'h.mabrouk@cabinet.test', telephone: '20 100 400', role: Role.SECRETAIRE, actif: false },
   ];
-  // create() un par un : le hook « pre save » hache chaque mot de passe.
+  // new + save(), comme dans utilisateurController : Utilisateur.create() chercherait une sous-classe
+  // « SECRETAIRE » ou « ADMINISTRATEUR », qui n'existe pas (voir models/Utilisateur.js).
   const comptes = [];
   for (const compte of personnel) {
-    comptes.push(await Utilisateur.create({ ...compte, motDePasse: MOT_DE_PASSE }));
+    comptes.push(await new Utilisateur({ ...compte, motDePasse: MOT_DE_PASSE }).save());
   }
   const secretaire = comptes[1];
 
